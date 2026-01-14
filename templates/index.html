@@ -1,42 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Recommendation System</title>
+    <title>The Point Blank</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-<div class="container">
-    <h1>🎬 Movie Recommendation System</h1>
-    <p>Select a movie you like, and get personalized recommendations based on collaborative filtering!</p>
+    <div class="container">
+        <header>
+            <h1>The Point Blank</h1>
+            <p class="subtitle">Powered by AI & Advanced Machine Learning</p>
+        </header>
 
-    <form method="POST" class="form-container">
-        <select name="movie" required class="movie-select">
-            <option value="">Select a movie</option>
-            {% for movie in movies %}
-                <option value="{{ movie.title }}">{{ movie.title }} ({{ movie.genre }})</option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="recommend-btn">Get Recommendations</button>
-    </form>
-
-    {% if error %}
-        <div class="error">{{ error }}</div>
-    {% endif %}
-
-    {% if selected_movie %}
-        <h2>Recommended Movies for "{{ selected_movie }}"</h2>
-        <div class="recommendations-grid">
-            {% for movie in recommendations %}
-                <div class="movie-card">
-                    <h3>{{ movie }}</h3>
-                </div>
-            {% endfor %}
+        <!-- Navigation / Mode Selection -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="location.href='/'">Home</button>
+            <button class="tab-btn"
+                onclick="document.getElementById('ai-section').scrollIntoView({behavior: 'smooth'})">AI Chat</button>
         </div>
-    {% endif %}
-</div>
 
+        <!-- Main Recommendation Form -->
+        <div class="search-section">
+            <h2>Find Your Next Favorite Movie</h2>
+            <p style="color: grey; margin-bottom: 1rem;">Add movies you've watched to get personalized recommendations.
+            </p>
+
+            <form method="POST" action="/" class="rec-form" onsubmit="return validateForm()">
+                <div class="input-group">
+                    <input type="text" id="movie-input" list="movie-list" placeholder="Search for a movie..."
+                        autocomplete="off">
+                    <datalist id="movie-list">
+                        {% for movie in movies %}
+                        <option value="{{ movie.title }}">
+                            {% endfor %}
+                    </datalist>
+                    <button type="button" class="secondary-btn" onclick="addMovie()">Add</button>
+                </div>
+
+                <div id="selected-movies-container" class="chips-container">
+                    <!-- Selected movies will appear here -->
+                    {% if selected_movie %}
+                    <!-- Server-side re-rendering of selection (if needed) -->
+                    <script>
+                        // Pre-populate if re-rendering from POST
+                        // We can handle this via JS below using the 'selected_movie' variable passed from Flask
+                    </script>
+                    {% endif %}
+                </div>
+
+                <input type="hidden" name="selected_movies" id="selected-movies-input">
+                <button type="submit" class="primary-btn pulse-btn">Get Recommendations</button>
+            </form>
+        </div>
+
+        <!-- Error Message -->
+        {% if error %}
+        <div class="error">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Recommendations Display -->
+        {% if recommendations %}
+        <section id="results">
+            <h2>Recommended for You</h2>
+            <div class="movie-grid">
+                {% for movie in recommendations %}
+                <div class="movie-card">
+                    <img src="{{ movie.poster_path if movie.poster_path else 'https://via.placeholder.com/200x300?text=No+Image' }}"
+                        alt="{{ movie.title }}" class="movie-poster">
+                    <div class="movie-info">
+                        <h3 class="movie-title">{{ movie.title }}</h3>
+                        <div class="movie-meta">
+                            <span class="rating">⭐ {{ movie.vote_average if movie.vote_average else 'N/A' }}</span>
+                            <span class="year">{{ movie.release_date[:4] if movie.release_date else '' }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Popular Movies Fallback -->
+        {% if not recommendations and not selected_movie %}
+        <section id="popular">
+            <h2>Trending Now</h2>
+            <div class="movie-grid">
+                {% for movie in popular_movies %}
+                <div class="movie-card">
+                    <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster">
+                    <div class="movie-info">
+                        <h3 class="movie-title">{{ movie.title }}</h3>
+                        <div class="movie-meta">
+                            <span class="rating">⭐ {{ movie.vote_average }}</span>
+                            <span class="year">{{ movie.release_date[:4] }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- AI Chat Section -->
+        <section id="ai-section" class="chat-wrapper">
+            <h2>🤖 AI Movie Assistant</h2>
+            <div class="chat-interface">
+                <div class="chat-box" id="chat-box">
+                    <div class="chat-message ai-msg">
+                        <div class="avatar">AI</div>
+                        <div class="msg-content">Hello! I'm your AI movie assistant. What are you in the mood for?</div>
+                    </div>
+                </div>
+                <form id="chat-form" class="chat-input-area" onsubmit="handleChat(event)">
+                    <input type="text" id="user-input" placeholder="Ask for recommendations..." required>
+                    <button type="submit" class="send-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Movie Selection Logic
+        let selectedMovies = [];
+        const movieInput = document.getElementById('movie-input');
+        const container = document.getElementById('selected-movies-container');
+        const hiddenInput = document.getElementById('selected-movies-input');
+
+        // Pre-load from server if available
+        const serverSelection = JSON.parse('{{ selected_movie | tojson | safe | replace("\'", "\\\'") }}');
+        if (serverSelection) {
+            if (Array.isArray(serverSelection)) {
+                selectedMovies = serverSelection;
+            } else {
+                selectedMovies = [serverSelection];
+            }
+            renderChips();
+        }
+
+        function addMovie() {
+            const val = movieInput.value.trim();
+            if (!val) return;
+
+            // Limit to 5
+            if (selectedMovies.length >= 5) {
+                alert("You can select up to 5 movies.");
+                return;
+            }
+
+            if (!selectedMovies.includes(val)) {
+                selectedMovies.push(val);
+                renderChips();
+                movieInput.value = '';
+            }
+        }
+
+        function removeMovie(index) {
+            selectedMovies.splice(index, 1);
+            renderChips();
+        }
+
+        function renderChips() {
+            container.innerHTML = '';
+            selectedMovies.forEach((movie, index) => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerHTML = `
+                    <span>${movie}</span>
+                    <span class="close-btn" onclick="removeMovie(${index})">&times;</span>
+                `;
+                container.appendChild(chip);
+            });
+            updateHiddenInput();
+        }
+
+        function updateHiddenInput() {
+            hiddenInput.value = JSON.stringify(selectedMovies);
+        }
+
+        function validateForm() {
+            if (selectedMovies.length === 0) {
+                alert("Please add at least one movie.");
+                return false;
+            }
+            updateHiddenInput(); // Ensure it's synced
+            return true;
+        }
+
+        // Handle Enter key in movie input to add instead of submit
+        movieInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                addMovie();
+            }
+        });
+
+        // Chat Logic
+        async function handleChat(event) {
+            event.preventDefault();
+            const input = document.getElementById('user-input');
+            const message = input.value;
+            const chatBox = document.getElementById('chat-box');
+
+            // Add User Message
+            chatBox.innerHTML += `
+                <div class="chat-message user-msg">
+                    <div class="msg-content">${message}</div>
+                </div>`;
+            input.value = '';
+            scrollToBottom();
+
+            // Show Loading
+            const loadingId = 'loading-' + Date.now();
+            chatBox.innerHTML += `
+                <div class="chat-message ai-msg" id="${loadingId}">
+                    <div class="avatar">AI</div>
+                    <div class="msg-content typing">Thinking...</div>
+                </div>`;
+            scrollToBottom();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: message })
+                });
+                const data = await response.json();
+
+                // Remove loading
+                document.getElementById(loadingId).remove();
+
+                // Add AI Response
+                // Using Markdown-ish for newlines if needed, but basic text for now
+                const formattedResponse = data.response.replace(/\n/g, '<br>');
+
+                chatBox.innerHTML += `
+                    <div class="chat-message ai-msg">
+                        <div class="avatar">AI</div>
+                        <div class="msg-content">${formattedResponse}</div>
+                    </div>`;
+            } catch (error) {
+                document.getElementById(loadingId).innerText = "Error connecting to AI.";
+            }
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
 </body>
+
 </html>

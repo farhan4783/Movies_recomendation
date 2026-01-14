@@ -3,49 +3,66 @@
 A machine learning-based movie recommendation system using KNN and collaborative filtering. This web application allows users to select a movie they like and receive personalized recommendations based on user ratings and similarity scores.
 
 ## Features
-- **Collaborative Filtering**: Uses KNN algorithm with cosine similarity to find similar movies based on user ratings.
-- **Web Interface**: Clean, responsive Flask web application with modern UI.
-- **Error Handling**: Robust error handling for better user experience.
-- **Dataset**: Expanded dataset with 30 movies and ratings from 10 users for improved recommendations.
+- **Multi-Movie Selection**: Search and select up to 5 movies to get more accurate, hybrid recommendations based on a collective taste profile.
+- **AI-Powered Chat Assistant**: "The Point Blank" AI assistant (powered by **Gemini-1.5-Flash**) helps users discover movies through natural language conversation.
+- **Hybrid Recommendation Engine**: Combines content-based filtering (genres, keywords) and collaborative filtering (user ratings) for robust suggestions.
+- **Modern UI/UX**: A completely overhauled, responsive interface featuring glassmorphism, smooth animations, and a "Point Blank" branded dark theme.
+- **Interactive Elements**: Dynamic movie search with autocomplete, chip-based selection, and a sticky chat interface.
 
 ## Tech Stack
 - **Backend**: Python, Flask
-- **ML**: Pandas, NumPy, Scikit-learn
-- **Frontend**: HTML, CSS (responsive design)
-- **Data**: CSV files for movies and ratings
+- **AI/ML**: 
+    - Google Gemini API (LLM for Chat)
+    - Scikit-learn (KNN, Cosine Similarity)
+    - Pandas, NumPy
+- **Frontend**: HTML5, Modern CSS (Glassmorphism, Animations), JavaScript (Vanilla)
+- **Data**: CSV datasets for movies and ratings
 
 ## Installation and Setup
 
 1. **Clone or Download** the project repository.
 
 2. **Install Dependencies**:
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run the Application**:
+3. **Environment Setup**:
+   Create a `.env` file in the root directory and add your Google Gemini API key:
    ```
+   GEMINI_API_KEY=your_api_key_here
+   ```
+
+4. **Run the Application**:
+   ```bash
    python app.py
    ```
 
-4. **Access the App**:
-   Open your browser and go to `http://127.0.0.1:5000/` (or the URL shown in the terminal).
+5. **Access the App**:
+   Open your browser and visit `http://127.0.0.1:5000/`.
 
 ## Usage
-- Select a movie from the dropdown (movies are displayed with their genres).
-- Click "Get Recommendations" to receive 3 similar movie suggestions.
-- Recommendations are shown in an attractive card layout.
+### getting Recommendations
+1. **Search**: Type a movie name in the search bar.
+2. **Select**: Click "Add" or press Enter to add it to your selection list (up to 5 movies).
+3. **Get Results**: Click "Get Recommendations" to see 5 personalized movie suggestions based on your selection.
+
+### Hybrid AI Chat
+- Scroll down onto the **AI Movie Assistant** section.
+- Type any request (e.g., "I want a sci-fi movie with a mind-bending plot like Inception").
+- The AI will analyze your request and suggest movies with reasons.
 
 ## Project Structure
 ```
 movie-recommendation/
-├── app.py                 # Main Flask application
+├── app.py                 # Main Flask application with hybrid logic
 ├── model/
-│   └── knn_model.py       # KNN recommendation model
+│   ├── recommenders.py    # Hybrid, Content, and Collab engines
+│   └── ai_recommender.py  # Gemini AI integration
 ├── templates/
-│   └── index.html         # Main web page
+│   └── index.html         # Modern single-page interface
 ├── static/
-│   └── style.css          # CSS styles
+│   └── style.css          # Advanced styling & animations
 ├── data/
 │   ├── movies.csv         # Movie dataset
 │   └── ratings.csv        # User ratings dataset
@@ -54,11 +71,10 @@ movie-recommendation/
 ```
 
 ## Dataset
-- **Movies**: 30 popular movies across various genres (Action, Sci-Fi, Drama, etc.)
-- **Ratings**: Simulated ratings from 10 users to demonstrate collaborative filtering
+- **Movies**: Expanded dataset including metadata for content-based filtering.
+- **Ratings**: User interaction data for collaborative filtering.
 
 ## Future Improvements
-- Integrate with real movie databases (e.g., TMDB API) for more movies and posters.
-- Add user authentication and personalized profiles.
-- Implement content-based filtering for hybrid recommendations.
-- Add search functionality and filters by genre.
+- Integrate with TMDB API for real-time posters and metadata.[done].
+- User accounts to save watchlists and favorite movies.
+- Advanced filtering by year, genre, and rating.
