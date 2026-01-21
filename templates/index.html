@@ -20,8 +20,8 @@
         <!-- Navigation / Mode Selection -->
         <div class="tabs">
             <button class="tab-btn active" onclick="location.href='/'">Home</button>
-            <button class="tab-btn"
-                onclick="document.getElementById('ai-section').scrollIntoView({behavior: 'smooth'})">AI Chat</button>
+            <button class="tab-btn" onclick="location.href='/modyverse'">Modyverse</button>
+            <button class="tab-btn" onclick="location.href='/chat'">AI Chat</button>
         </div>
 
         <!-- Main Recommendation Form -->
@@ -109,25 +109,7 @@
         {% endif %}
 
         <!-- AI Chat Section -->
-        <section id="ai-section" class="chat-wrapper">
-            <h2>🤖 AI Movie Assistant</h2>
-            <div class="chat-interface">
-                <div class="chat-box" id="chat-box">
-                    <div class="chat-message ai-msg">
-                        <div class="avatar">AI</div>
-                        <div class="msg-content">Hello! I'm your AI movie assistant. What are you in the mood for?</div>
-                    </div>
-                </div>
-                <form id="chat-form" class="chat-input-area" onsubmit="handleChat(event)">
-                    <input type="text" id="user-input" placeholder="Ask for recommendations..." required>
-                    <button type="submit" class="send-btn">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                        </svg>
-                    </button>
-                </form>
-            </div>
-        </section>
+        <!-- AI Chat Section Removed (Moved to /chat) -->
 
     </div>
 

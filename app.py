@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
-from model.ai_recommender import get_ai_recommendation
+from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
+from model.ai_recommender import get_ai_recommendation, get_mood_recommendation
 from utils.tmdb_client import fetch_movie_details, fetch_popular_movies
 
 app = Flask(__name__)
@@ -118,7 +119,25 @@ def ai_chat():
         return jsonify({"response": "Please say something!"})
         
     response = get_ai_recommendation(user_query)
+    response = get_ai_recommendation(user_query)
     return jsonify({"response": response})
+
+@app.route("/chat")
+def chat_page():
+    return render_template("chat.html")
+
+@app.route("/modyverse")
+def modyverse_page():
+    return render_template("modyverse.html")
+
+@app.route("/api/modyverse", methods=["POST"])
+def modyverse_api():
+    data = request.get_json()
+    if not data:
+        return jsonify({"html": "<p>Error: No data received</p>"})
+        
+    response_html = get_mood_recommendation(data)
+    return jsonify({"html": response_html})
 
 if __name__ == "__main__":
     app.run(debug=True)

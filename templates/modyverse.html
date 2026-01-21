@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modyverse - Mood Based Recommendations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Modyverse</h1>
+            <p class="subtitle">Tell us how you feel, we'll tell you what to watch.</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn" onclick="location.href='/'">Home</button>
+            <button class="tab-btn active" onclick="location.href='/modyverse'">Modyverse</button>
+            <button class="tab-btn" onclick="location.href='/chat'">AI Chat</button>
+        </div>
+
+        <div class="modyverse-container" id="questionnaire-container">
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <form id="modyverse-form" onsubmit="handleModyverseSubmit(event)">
+                <!-- Step 1: Mood -->
+                <div class="step active" id="step-1">
+                    <h2>How are you feeling right now?</h2>
+                    <div class="options-grid">
+                        <label class="option-card">
+                            <input type="radio" name="mood" value="Happy & Energetic" required>
+                            <span class="emoji">⚡</span>
+                            <span class="label">Energetic</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="mood" value="Relaxed & Chill">
+                            <span class="emoji">🍃</span>
+                            <span class="label">Relaxed</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="mood" value="Melancholic & Reflective">
+                            <span class="emoji">🌧️</span>
+                            <span class="label">Melancholic</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="mood" value="Adventurous">
+                            <span class="emoji">🚀</span>
+                            <span class="label">Adventurous</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="mood" value="Stressed / Need Escape">
+                            <span class="emoji">🤯</span>
+                            <span class="label">Need Escape</span>
+                        </label>
+                         <label class="option-card">
+                            <input type="radio" name="mood" value="Romantic">
+                            <span class="emoji">💖</span>
+                            <span class="label">Romantic</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 2: Story Type -->
+                <div class="step" id="step-2">
+                    <h2>What kind of story do you want?</h2>
+                    <div class="options-grid">
+                        <label class="option-card">
+                            <input type="radio" name="story_type" value="Mind-Bending" required>
+                            <span class="emoji">🌀</span>
+                            <span class="label">Mind-Bending</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="story_type" value="Heartwarming">
+                            <span class="emoji">🥰</span>
+                            <span class="label">Heartwarming</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="story_type" value="Dark & Gritty">
+                            <span class="emoji">🖤</span>
+                            <span class="label">Dark & Gritty</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="story_type" value="Laugh Out Loud">
+                            <span class="emoji">😂</span>
+                            <span class="label">Funny</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="story_type" value="Inspiring">
+                            <span class="emoji">🏆</span>
+                            <span class="label">Inspiring</span>
+                        </label>
+                         <label class="option-card">
+                            <input type="radio" name="story_type" value="Scary">
+                            <span class="emoji">👻</span>
+                            <span class="label">Scary</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 3: Company -->
+                <div class="step" id="step-3">
+                    <h2>Who are you watching with?</h2>
+                    <div class="options-grid">
+                        <label class="option-card">
+                            <input type="radio" name="company" value="Alone" required>
+                            <span class="emoji">👤</span>
+                            <span class="label">Just Me</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="company" value="Date Night">
+                            <span class="emoji">🍷</span>
+                            <span class="label">Date Night</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="company" value="Friends">
+                            <span class="emoji">🍕</span>
+                            <span class="label">Friends</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="company" value="Family">
+                            <span class="emoji">👨‍👩‍👧‍👦</span>
+                            <span class="label">Family</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="prev-btn" class="secondary-btn" onclick="prevStep()" style="display:none;">Back</button>
+                    <button type="button" id="next-btn" class="primary-btn" onclick="nextStep()">Next</button>
+                    <button type="submit" id="submit-btn" class="primary-btn" style="display:none;">Find Movies</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="loading" class="loading-state" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing your mood...</p>
+        </div>
+
+        <div id="results-area" class="results-container" style="display: none;">
+            <h2>Here is what the universe suggests:</h2>
+            <div id="ai-results-content"></div>
+            <button class="secondary-btn" onclick="location.reload()" style="margin-top: 2rem;">Try Again</button>
+        </div>
+
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        function updateUI() {
+            // Update Steps
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+
+            // Update Progress Bar
+            const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            // Update Buttons
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (currentStep === 1) {
+                prevBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'block';
+            }
+
+            if (currentStep === totalSteps) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        function nextStep() {
+            // Simple validation: check if radio selected in current step
+            const currentStepEl = document.getElementById(`step-${currentStep}`);
+            const selected = currentStepEl.querySelector('input[type="radio"]:checked');
+            
+            if (!selected) {
+                alert("Please select an option.");
+                return;
+            }
+
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        // Auto-advance when clicking a card (optional, but nice UX)
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Wait slightly for visual feedback then next
+                setTimeout(() => {
+                    if (currentStep < totalSteps) {
+                        nextStep();
+                    }
+                }, 300);
+            });
+        });
+
+        async function handleModyverseSubmit(e) {
+            e.preventDefault();
+            
+            // Gather data
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // Show loading
+            document.getElementById('questionnaire-container').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+
+            try {
+                const response = await fetch('/api/modyverse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                
+                // Show results
+                const resultsArea = document.getElementById('results-area');
+                const contentArea = document.getElementById('ai-results-content');
+                
+                contentArea.innerHTML = result.html;
+                resultsArea.style.display = 'block';
+
+            } catch (error) {
+                console.error(error);
+                alert("Something went wrong. Please try again.");
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

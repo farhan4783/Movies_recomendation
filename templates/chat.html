@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Movie Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>AI Assistant</h1>
+            <p class="subtitle">Chat with our AI to find your perfect movie match.</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn" onclick="location.href='/'">Home</button>
+            <button class="tab-btn" onclick="location.href='/modyverse'">Modyverse</button>
+            <button class="tab-btn active" onclick="location.href='/chat'">AI Chat</button>
+        </div>
+
+        <div class="chat-page-container">
+            <div class="chat-page-box" id="chat-box">
+                <div class="chat-message ai-msg">
+                    <div class="avatar">AI</div>
+                    <div class="msg-content">Hello! I'm here to help you find a great movie. Tell me what you're into,
+                        or ask me for a specific genre!</div>
+                </div>
+            </div>
+
+            <form class="chat-page-input" onsubmit="handleChat(event)">
+                <input type="text" id="user-input" placeholder="Ask for recommendations..." required>
+                <button type="submit" class="send-btn">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function handleChat(event) {
+            event.preventDefault();
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById('chat-box');
+
+            // Add User Message
+            chatBox.innerHTML += `
+                <div class="chat-message user-msg">
+                    <div class="msg-content">${message}</div>
+                </div>`;
+            input.value = '';
+            scrollToBottom();
+
+            // Show Loading
+            const loadingId = 'loading-' + Date.now();
+            chatBox.innerHTML += `
+                <div class="chat-message ai-msg" id="${loadingId}">
+                    <div class="avatar">AI</div>
+                    <div class="msg-content typing">Thinking...</div>
+                </div>`;
+            scrollToBottom();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: message })
+                });
+                const data = await response.json();
+
+                // Remove loading
+                document.getElementById(loadingId).remove();
+
+                // Add AI Response
+                // Using Markdown-ish for newlines if needed, but basic text for now
+                const formattedResponse = data.response.replace(/\n/g, '<br>');
+
+                chatBox.innerHTML += `
+                    <div class="chat-message ai-msg">
+                        <div class="avatar">AI</div>
+                        <div class="msg-content">${formattedResponse}</div>
+                    </div>`;
+            } catch (error) {
+                document.getElementById(loadingId).innerText = "Error connecting to AI.";
+            }
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
