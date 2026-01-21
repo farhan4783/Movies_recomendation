@@ -8,6 +8,7 @@ A machine learning-based movie recommendation system using KNN and collaborative
 - **Hybrid Recommendation Engine**: Combines content-based filtering (genres, keywords) and collaborative filtering (user ratings) for robust suggestions.
 - **Modern UI/UX**: A completely overhauled, responsive interface featuring glassmorphism, smooth animations, and a "Point Blank" branded dark theme.
 - **Interactive Elements**: Dynamic movie search with autocomplete, chip-based selection, and a sticky chat interface.
+- **Modyverse**: mood based movie recommendations.
 
 ## Tech Stack
 - **Backend**: Python, Flask
