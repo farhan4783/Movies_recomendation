@@ -21,6 +21,14 @@
             <button class="tab-btn" onclick="location.href='/'">Home</button>
             <button class="tab-btn" onclick="location.href='/modyverse'">Modyverse</button>
             <button class="tab-btn active" onclick="location.href='/chat'">AI Chat</button>
+
+            {% if user.is_authenticated %}
+            <span style="color: white; margin-left: auto; margin-right: 1rem;">Hi, {{ user.username }}</span>
+            <button class="tab-btn" onclick="location.href='/logout'"
+                style="background: rgba(255, 0, 0, 0.2);">Logout</button>
+            {% else %}
+            <button class="tab-btn" onclick="location.href='/login'" style="margin-left: auto;">Login</button>
+            {% endif %}
         </div>
 
         <div class="chat-page-container">

@@ -1,9 +1,10 @@
 flask
 pandas
 scikit-learn
-
 nltk
 numpy
 requests
 google-generativeai
 python-dotenv
+flask-sqlalchemy
+flask-login

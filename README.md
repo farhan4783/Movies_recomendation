@@ -77,5 +77,5 @@ movie-recommendation/
 
 ## Future Improvements
 - Integrate with TMDB API for real-time posters and metadata.[done].
-- User accounts to save watchlists and favorite movies.
-- Advanced filtering by year, genre, and rating.
+- User accounts to save watchlists and favorite movies.[done].
+- Advanced filtering by year, genre, and rating.[done].

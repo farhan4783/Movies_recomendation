@@ -18,10 +18,19 @@
         </header>
 
         <!-- Navigation / Mode Selection -->
+        <!-- Navigation / Mode Selection -->
         <div class="tabs">
             <button class="tab-btn active" onclick="location.href='/'">Home</button>
             <button class="tab-btn" onclick="location.href='/modyverse'">Modyverse</button>
             <button class="tab-btn" onclick="location.href='/chat'">AI Chat</button>
+
+            {% if user.is_authenticated %}
+            <span style="color: white; margin-left: auto; margin-right: 1rem;">Hi, {{ user.username }}</span>
+            <button class="tab-btn" onclick="location.href='/logout'"
+                style="background: rgba(255, 0, 0, 0.2);">Logout</button>
+            {% else %}
+            <button class="tab-btn" onclick="location.href='/login'" style="margin-left: auto;">Login</button>
+            {% endif %}
         </div>
 
         <!-- Main Recommendation Form -->
@@ -31,30 +40,71 @@
             </p>
 
             <form method="POST" action="/" class="rec-form" onsubmit="return validateForm()">
-                <div class="input-group">
-                    <input type="text" id="movie-input" list="movie-list" placeholder="Search for a movie..."
-                        autocomplete="off">
-                    <datalist id="movie-list">
-                        {% for movie in movies %}
-                        <option value="{{ movie.title }}">
-                            {% endfor %}
-                    </datalist>
-                    <button type="button" class="secondary-btn" onclick="addMovie()">Add</button>
-                </div>
+                <!-- Flex container for Filters + Search -->
+                <div class="search-container" style="display: flex; gap: 2rem; flex-wrap: wrap;">
 
-                <div id="selected-movies-container" class="chips-container">
-                    <!-- Selected movies will appear here -->
-                    {% if selected_movie %}
-                    <!-- Server-side re-rendering of selection (if needed) -->
-                    <script>
-                        // Pre-populate if re-rendering from POST
-                        // We can handle this via JS below using the 'selected_movie' variable passed from Flask
-                    </script>
-                    {% endif %}
-                </div>
+                    <!-- Filters Sidebar -->
+                    <div class="filters-sidebar"
+                        style="flex: 1; min-width: 250px; background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Filters</h3>
 
-                <input type="hidden" name="selected_movies" id="selected-movies-input">
-                <button type="submit" class="primary-btn pulse-btn">Get Recommendations</button>
+                        <div class="filter-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Genre</label>
+                            <select name="genre"
+                                style="width: 100%; padding: 0.5rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;">
+                                <option value="All">All Genres</option>
+                                {% for g in genres %}
+                                <option value="{{ g }}">{{ g }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Min Year: <span
+                                    id="year-val">1970</span></label>
+                            <input type="range" name="min_year" min="1970" max="2025" value="1970"
+                                oninput="document.getElementById('year-val').innerText = this.value"
+                                style="width: 100%;">
+                        </div>
+
+                        <div class="filter-group">
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Min Rating: <span
+                                    id="rating-val">0</span></label>
+                            <input type="range" name="min_rating" min="0" max="5" step="0.5" value="0"
+                                oninput="document.getElementById('rating-val').innerText = this.value"
+                                style="width: 100%;">
+                        </div>
+                    </div>
+
+                    <!-- Search Box Area -->
+                    <div class="search-box-area" style="flex: 2; min-width: 300px;">
+                        <div class="input-group">
+                            <input type="text" id="movie-input" list="movie-list" placeholder="Search for a movie..."
+                                autocomplete="off">
+                            <datalist id="movie-list">
+                                {% for movie in movies %}
+                                <option value="{{ movie.title }}">
+                                    {% endfor %}
+                            </datalist>
+                            <button type="button" class="secondary-btn" onclick="addMovie()">Add</button>
+                        </div>
+
+                        <div id="selected-movies-container" class="chips-container">
+                            <!-- Selected movies will appear here -->
+                            {% if selected_movie %}
+                            <!-- Server-side re-rendering of selection (if needed) -->
+                            <script>
+                                // Pre-populate if re-rendering from POST
+                                // We can handle this via JS below using the 'selected_movie' variable passed from Flask
+                            </script>
+                            {% endif %}
+                        </div>
+
+                        <input type="hidden" name="selected_movies" id="selected-movies-input">
+                        <button type="submit" class="primary-btn pulse-btn" style="margin-top: 1rem; width: 100%;">Get
+                            Recommendations</button>
+                    </div>
+                </div>
             </form>
         </div>
 

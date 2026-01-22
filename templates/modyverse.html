@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
     <div class="container">
@@ -19,6 +21,14 @@
             <button class="tab-btn" onclick="location.href='/'">Home</button>
             <button class="tab-btn active" onclick="location.href='/modyverse'">Modyverse</button>
             <button class="tab-btn" onclick="location.href='/chat'">AI Chat</button>
+
+            {% if user.is_authenticated %}
+            <span style="color: white; margin-left: auto; margin-right: 1rem;">Hi, {{ user.username }}</span>
+            <button class="tab-btn" onclick="location.href='/logout'"
+                style="background: rgba(255, 0, 0, 0.2);">Logout</button>
+            {% else %}
+            <button class="tab-btn" onclick="location.href='/login'" style="margin-left: auto;">Login</button>
+            {% endif %}
         </div>
 
         <div class="modyverse-container" id="questionnaire-container">
@@ -57,7 +67,7 @@
                             <span class="emoji">🤯</span>
                             <span class="label">Need Escape</span>
                         </label>
-                         <label class="option-card">
+                        <label class="option-card">
                             <input type="radio" name="mood" value="Romantic">
                             <span class="emoji">💖</span>
                             <span class="label">Romantic</span>
@@ -94,7 +104,7 @@
                             <span class="emoji">🏆</span>
                             <span class="label">Inspiring</span>
                         </label>
-                         <label class="option-card">
+                        <label class="option-card">
                             <input type="radio" name="story_type" value="Scary">
                             <span class="emoji">👻</span>
                             <span class="label">Scary</span>
@@ -130,7 +140,8 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" id="prev-btn" class="secondary-btn" onclick="prevStep()" style="display:none;">Back</button>
+                    <button type="button" id="prev-btn" class="secondary-btn" onclick="prevStep()"
+                        style="display:none;">Back</button>
                     <button type="button" id="next-btn" class="primary-btn" onclick="nextStep()">Next</button>
                     <button type="submit" id="submit-btn" class="primary-btn" style="display:none;">Find Movies</button>
                 </div>
@@ -187,7 +198,7 @@
             // Simple validation: check if radio selected in current step
             const currentStepEl = document.getElementById(`step-${currentStep}`);
             const selected = currentStepEl.querySelector('input[type="radio"]:checked');
-            
+
             if (!selected) {
                 alert("Please select an option.");
                 return;
@@ -208,7 +219,7 @@
 
         // Auto-advance when clicking a card (optional, but nice UX)
         document.querySelectorAll('.option-card').forEach(card => {
-            card.addEventListener('click', function() {
+            card.addEventListener('click', function () {
                 // Wait slightly for visual feedback then next
                 setTimeout(() => {
                     if (currentStep < totalSteps) {
@@ -220,7 +231,7 @@
 
         async function handleModyverseSubmit(e) {
             e.preventDefault();
-            
+
             // Gather data
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
@@ -235,16 +246,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                
+
                 const result = await response.json();
-                
+
                 // Hide loading
                 document.getElementById('loading').style.display = 'none';
-                
+
                 // Show results
                 const resultsArea = document.getElementById('results-area');
                 const contentArea = document.getElementById('ai-results-content');
-                
+
                 contentArea.innerHTML = result.html;
                 resultsArea.style.display = 'block';
 
@@ -256,4 +267,5 @@
         }
     </script>
 </body>
+
 </html>
