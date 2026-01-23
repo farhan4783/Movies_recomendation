@@ -71,3 +71,65 @@ def fetch_popular_movies(page=1):
     except Exception as e:
         print(f"Error fetching popular movies: {e}")
         return []
+
+def fetch_full_movie_details(title):
+    """
+    Fetches comprehensive movie details including cast, runtime, backdrop, and similar movies.
+    First searches by title to get ID, then fetches full details.
+    """
+    if not TMDB_API_KEY:
+        return None
+
+    try:
+        # 1. Search for ID
+        search_url = f"{BASE_URL}/search/movie"
+        params = {"api_key": TMDB_API_KEY, "query": title}
+        search_res = requests.get(search_url, params=params).json()
+        
+        if not search_res.get("results"):
+            return None
+            
+        movie_id = search_res["results"][0]["id"]
+        
+        # 2. Get Full Details
+        details_url = f"{BASE_URL}/movie/{movie_id}"
+        params = {
+            "api_key": TMDB_API_KEY,
+            "append_to_response": "credits,videos,similar,recommendations"
+        }
+        data = requests.get(details_url, params=params).json()
+        
+        # Process Cast (Top 10)
+        cast = []
+        for member in data.get("credits", {}).get("cast", [])[:10]:
+            cast.append({
+                "name": member.get("name"),
+                "character": member.get("character"),
+                "profile_path": f"{IMAGE_BASE_URL}{member.get('profile_path')}" if member.get("profile_path") else None
+            })
+            
+        # Process Videos (Trailer)
+        trailer_key = None
+        for video in data.get("videos", {}).get("results", []):
+            if video.get("type") == "Trailer" and video.get("site") == "YouTube":
+                trailer_key = video.get("key")
+                break
+                
+        return {
+            "id": data.get("id"),
+            "title": data.get("title"),
+            "overview": data.get("overview"),
+            "poster_path": f"{IMAGE_BASE_URL}{data.get('poster_path')}" if data.get('poster_path') else None,
+            "backdrop_path": f"https://image.tmdb.org/t/p/original{data.get('backdrop_path')}" if data.get('backdrop_path') else None,
+            "release_date": data.get("release_date"),
+            "vote_average": data.get("vote_average"),
+            "runtime": data.get("runtime"),
+            "genres": [g["name"] for g in data.get("genres", [])],
+            "tagline": data.get("tagline"),
+            "cast": cast,
+            "trailer_url": f"https://www.youtube.com/embed/{trailer_key}" if trailer_key else None,
+            "similar": data.get("similar", {}).get("results", [])[:6]
+        }
+    except Exception as e:
+        print(f"Error fetching full details for {title}: {e}")
+        return None

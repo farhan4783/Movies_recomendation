@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}The Point Blank{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- Sticky Navbar -->
+    <nav class="sticky-nav">
+        <div class="nav-content">
+            <a href="/" class="nav-logo">The Point Blank</a>
+            <div class="nav-links" id="navLinks">
+                <a href="/" class="{{ 'active-link' if request.path == '/' else '' }}">Home</a>
+                <a href="/modyverse" class="{{ 'active-link' if request.path == '/modyverse' else '' }}">Modyverse</a>
+                <a href="/chat" class="{{ 'active-link' if request.path == '/chat' else '' }}">AI Chat</a>
+
+                {% if current_user.is_authenticated %}
+                <a href="/watchlist" class="{{ 'active-link' if request.path == '/watchlist' else '' }}">My
+                    Watchlist</a>
+                <div class="user-menu">
+                    <span class="username-display">Hi, {{ current_user.username }}</span>
+                    <a href="/logout" class="logout-btn">Logout</a>
+                </div>
+                {% else %}
+                <a href="/login" class="login-link {{ 'active-link' if request.path == '/login' else '' }}">Login</a>
+                <a href="/register" class="signup-btn">Sign Up</a>
+                {% endif %}
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container message-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-logo">The Point Blank</div>
+            <p class="footer-text">Advanced AI-Powered Movie Recommendations</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact</a>
+            </div>
+            <p class="copyright">&copy; {{ 2025 }} The Point Blank. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile Menu Toggle
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function (event) {
+            const nav = document.querySelector('.sticky-nav');
+            const hamburger = document.querySelector('.hamburger');
+            if (!nav.contains(event.target) && !hamburger.contains(event.target)) {
+                document.getElementById('navLinks').classList.remove('active');
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

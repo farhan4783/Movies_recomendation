@@ -6,9 +6,9 @@ import os
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation
-from utils.tmdb_client import fetch_movie_details, fetch_popular_movies
+from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details
 from model import db
-from model.models import User
+from model.models import User, Watchlist
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super_secret_key_change_this")
@@ -245,14 +245,56 @@ def chat_page():
 def modyverse_page():
     return render_template("modyverse.html", user=current_user)
 
-@app.route("/api/modyverse", methods=["POST"])
-def modyverse_api():
-    data = request.get_json()
-    if not data:
-        return jsonify({"html": "<p>Error: No data received</p>"})
-        
     response_html = get_mood_recommendation(data)
     return jsonify({"html": response_html})
+
+@app.route("/movie/<path:title>")
+def movie_details(title):
+    # Fetch full details
+    details = fetch_full_movie_details(title)
+    
+    if not details:
+        # Fallback if not found by title 
+        return render_template("index.html", error=f"Movie '{title}' details not found.", user=current_user)
+
+    in_watchlist = False
+    if current_user.is_authenticated:
+        exists = Watchlist.query.filter_by(user_id=current_user.id, movie_title=details['title']).first()
+        if exists:
+            in_watchlist = True
+            
+    return render_template("movie_details.html", movie=details, in_watchlist=in_watchlist, user=current_user)
+
+@app.route("/api/watchlist/toggle", methods=["POST"])
+@login_required
+def toggle_watchlist():
+    data = request.get_json()
+    title = data.get("title")
+    poster = data.get("poster_path")
+    tmdb_id = data.get("id")
+    
+    if not title:
+        return jsonify({"success": False, "message": "No title provided"})
+        
+    existing = Watchlist.query.filter_by(user_id=current_user.id, movie_title=title).first()
+    
+    if existing:
+        db.session.delete(existing)
+        action = "removed"
+    else:
+        new_item = Watchlist(user_id=current_user.id, movie_title=title, poster_path=poster, tmdb_id=tmdb_id)
+        db.session.add(new_item)
+        action = "added"
+        
+    db.session.commit()
+    return jsonify({"success": True, "action": action})
+
+@app.route("/watchlist")
+@login_required
+def watchlist_page():
+    wl_items = Watchlist.query.filter_by(user_id=current_user.id).all()
+    return render_template("watchlist.html", movies=wl_items, user=current_user)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

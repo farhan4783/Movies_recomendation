@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}My Watchlist - The Point Blank{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header>
+        <h1 class="hero-title">My Watchlist</h1>
+        <p class="subtitle">Your curated list of movies to watch.</p>
+    </header>
+
+    {% if movies %}
+    <div class="movie-grid">
+        {% for item in movies %}
+        <div class="movie-card" onclick="window.location.href='/movie/{{ item.movie_title|urlencode }}'">
+            <img src="{{ item.poster_path or 'https://via.placeholder.com/200x300' }}" alt="{{ item.movie_title }}"
+                class="movie-poster">
+            <div class="movie-info">
+                <h3 class="movie-title">{{ item.movie_title }}</h3>
+                <!-- Add remove button or more info here if needed -->
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state glass-panel"
+        style="text-align: center; padding: 4rem; max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.05);">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">😢</div>
+        <h2 style="margin-bottom: 1rem;">Your watchlist is empty</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">It looks like you haven't added any movies yet. Go
+            explore and find something amazing!</p>
+        <a href="/" class="primary-btn">Browse Movies</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

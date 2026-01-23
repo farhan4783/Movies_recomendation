@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.title }} - The Point Blank{% endblock %}
+
+{% block content %}
+<div class="movie-page">
+    <!-- Hero Section with Backdrop -->
+    <div class="movie-hero" style="
+        position: relative;
+        height: 80vh;
+        min-height: 600px;
+        background-image: url('{{ movie.backdrop_path }}');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        margin-top: -6rem; /* Pull up behind navbar */
+    ">
+        <div class="hero-overlay" style="
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, var(--background-color) 0%, rgba(5,5,5,0.8) 50%, rgba(5,5,5,0.4) 100%);
+        "></div>
+
+        <div class="container"
+            style="position: relative; height: 100%; display: flex; align-items: flex-end; padding-bottom: 4rem;">
+            <div class="hero-content"
+                style="display: flex; gap: 3rem; align-items: flex-end; width: 100%; flex-wrap: wrap;">
+
+                <!-- Poster -->
+                <div class="poster-wrapper" style="flex-shrink: 0;">
+                    <img src="{{ movie.poster_path or 'https://via.placeholder.com/300x450' }}" alt="{{ movie.title }}"
+                        style="
+                        width: 300px;
+                        border-radius: 16px;
+                        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+                        border: 1px solid rgba(255,255,255,0.1);
+                    ">
+                </div>
+
+                <!-- Text Info -->
+                <div class="movie-details-text" style="flex: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                    <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem; line-height: 1.1; font-weight: 800;">
+                        {{ movie.title }}
+                        <span style="font-weight: 300; color: #ccc; font-size: 2rem;">({{ movie.release_date[:4] if
+                            movie.release_date else 'N/A' }})</span>
+                    </h1>
+
+                    <div class="meta-tags"
+                        style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                        <span class="rating-badge" style="
+                            background: rgba(255, 215, 0, 0.2);
+                            color: #ffd700;
+                            padding: 0.3rem 0.8rem;
+                            border-radius: 8px;
+                            border: 1px solid rgba(255, 215, 0, 0.4);
+                            font-weight: bold;
+                        ">⭐ {{ movie.vote_average }}</span>
+
+                        {% if movie.runtime %}
+                        <span class="runtime" style="color: #ddd;">⏱️ {{ movie.runtime }} min</span>
+                        {% endif %}
+
+                        {% for genre in movie.genres %}
+                        <span class="genre-tag" style="
+                            background: rgba(255, 255, 255, 0.1);
+                            padding: 0.3rem 0.8rem;
+                            border-radius: 20px;
+                            font-size: 0.9rem;
+                            backdrop-filter: blur(5px);
+                        ">{{ genre }}</span>
+                        {% endfor %}
+                    </div>
+
+                    {% if movie.tagline %}
+                    <p class="tagline"
+                        style="font-style: italic; color: #bbb; font-size: 1.2rem; margin-bottom: 1.5rem;">"{{
+                        movie.tagline }}"</p>
+                    {% endif %}
+
+                    <div class="overview-section" style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--primary-color);">Overview</h3>
+                        <p class="overview" style="font-size: 1.1rem; line-height: 1.6; color: #ddd; max-width: 800px;">
+                            {{ movie.overview }}
+                        </p>
+                    </div>
+
+                    <div class="action-buttons">
+                        {% if current_user.is_authenticated %}
+                        <button id="watchlist-btn" class="primary-btn {{ 'active' if in_watchlist else '' }}"
+                            onclick='toggleWatchlist()'
+                            style="{{ 'background: #333; border: 1px solid var(--primary-color);' if in_watchlist else '' }}">
+                            {{ 'Remove from Watchlist' if in_watchlist else 'Add to Watchlist' }}
+                        </button>
+                        {% else %}
+                        <a href="/login?next={{ request.path }}" class="primary-btn">Login to Add to Watchlist</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Injection -->
+    <script id="movie-data" type="application/json">
+        {{ movie | tojson | safe }}
+    </script>
+
+    <div class="container main-content" style="padding-top: 2rem;">
+
+        <!-- Cast Section -->
+        {% if movie.cast %}
+        <section class="cast-section" style="margin-bottom: 4rem;">
+            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">Top Cast
+            </h2>
+            <div class="cast-grid" style="
+                display: flex;
+                overflow-x: auto;
+                gap: 1.5rem;
+                padding-bottom: 1.5rem;
+                scrollbar-width: thin;
+                scrollbar-color: var(--primary-color) #222;
+            ">
+                {% for actor in movie.cast %}
+                <div class="cast-card glass-panel"
+                    style="min-width: 160px; width: 160px; overflow: hidden; flex-shrink: 0;">
+                    <img src="{{ actor.profile_path or 'https://via.placeholder.com/160x240' }}" alt="{{ actor.name }}"
+                        style="width: 100%; height: 200px; object-fit: cover;">
+                    <div class="cast-info" style="padding: 1rem;">
+                        <p class="actor-name" style="font-weight: bold; font-size: 0.95rem; margin-bottom: 0.3rem;">{{
+                            actor.name }}</p>
+                        <p class="character-name" style="font-size: 0.85rem; color: var(--text-secondary);">{{
+                            actor.character }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Trailer Section -->
+        {% if movie.trailer_url %}
+        <section class="trailer-section" style="margin-bottom: 4rem;">
+            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">Official
+                Trailer</h2>
+            <div class="video-container glass-panel" style="padding: 10px;">
+                <div
+                    style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px;">
+                    <iframe src="{{ movie.trailer_url }}" frameborder="0" allowfullscreen
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                    </iframe>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Similar Movies -->
+        {% if movie.similar %}
+        <section class="similar-section" style="margin-bottom: 4rem;">
+            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">You May
+                Also Like</h2>
+            <div class="movie-grid">
+                {% for sim in movie.similar %}
+                <div class="movie-card" onclick="window.location.href='/movie/{{ sim.title|urlencode }}'">
+                    <img src="{{ 'https://image.tmdb.org/t/p/w500' + sim.poster_path if sim.poster_path else 'https://via.placeholder.com/200x300' }}"
+                        alt="{{ sim.title }}" class="movie-poster">
+                    <div class="movie-info">
+                        <h3 class="movie-title">{{ sim.title }}</h3>
+                        <div class="movie-meta">
+                            <span class="rating">⭐ {{ sim.vote_average }}</span>
+                            <span class="year">{{ sim.release_date[:4] if sim.release_date else '' }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const movieData = JSON.parse(document.getElementById('movie-data').textContent);
+
+    async function toggleWatchlist() {
+        const btn = document.getElementById('watchlist-btn');
+        // Simple optimistic UI update could be done here, but let's wait for server
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/watchlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: movieData.title,
+                    poster_path: movieData.poster_path,
+                    id: movieData.id
+                })
+            });
+
+            const data = await response.json();
+            btn.disabled = false;
+
+            if (data.success) {
+                if (data.action === 'added') {
+                    btn.innerText = 'Remove from Watchlist';
+                    btn.classList.add('active');
+                    btn.style.background = '#333';
+                    btn.style.border = '1px solid var(--primary-color)';
+                } else {
+                    btn.innerText = 'Add to Watchlist';
+                    btn.classList.remove('active');
+                    btn.style.background = ''; // reset to default class style
+                    btn.style.border = '';
+                }
+            } else {
+                alert('Error updating watchlist');
+            }
+        } catch (e) {
+            console.error(e);
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

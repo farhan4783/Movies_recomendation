@@ -2,6 +2,13 @@
 
 A machine learning-based movie recommendation system using KNN and collaborative filtering. This web application allows users to select a movie they like and receive personalized recommendations based on user ratings and similarity scores.
 
+
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
+
 ## Features
 - **Multi-Movie Selection**: Search and select up to 5 movies to get more accurate, hybrid recommendations based on a collective taste profile.
 - **AI-Powered Chat Assistant**: "The Point Blank" AI assistant (powered by **Gemini-1.5-Flash**) helps users discover movies through natural language conversation.
