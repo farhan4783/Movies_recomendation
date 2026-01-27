@@ -8,7 +8,7 @@ from model.recommenders import PopularityRecommender, ContentBasedRecommender, C
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation
 from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details
 from model import db
-from model.models import User, Watchlist
+from model.models import User, Watchlist, Review
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super_secret_key_change_this")
@@ -226,6 +226,28 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/profile')
+@login_required
+def profile():
+    reviews = Review.query.filter_by(user_id=current_user.id).order_by(Review.created_at.desc()).all()
+    watchlist_count = Watchlist.query.filter_by(user_id=current_user.id).count()
+    return render_template('profile.html', user=current_user, reviews=reviews, watchlist_count=watchlist_count)
+
+@app.route('/api/profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    data = request.get_json()
+    bio = data.get('bio')
+    avatar_url = data.get('avatar_url')
+    
+    if bio:
+        current_user.bio = bio
+    if avatar_url:
+        current_user.avatar_url = avatar_url
+        
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Profile updated successfully'})
+
 @app.route("/api/chat", methods=["POST"])
 def ai_chat():
     data = request.get_json()
@@ -245,6 +267,12 @@ def chat_page():
 def modyverse_page():
     return render_template("modyverse.html", user=current_user)
 
+@app.route("/api/modyverse", methods=["POST"])
+def api_modyverse():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
     response_html = get_mood_recommendation(data)
     return jsonify({"html": response_html})
 
@@ -263,7 +291,31 @@ def movie_details(title):
         if exists:
             in_watchlist = True
             
-    return render_template("movie_details.html", movie=details, in_watchlist=in_watchlist, user=current_user)
+    reviews = Review.query.filter_by(movie_title=details['title']).order_by(Review.created_at.desc()).all()
+            
+    return render_template("movie_details.html", movie=details, in_watchlist=in_watchlist, user=current_user, reviews=reviews)
+
+@app.route("/api/submit_review", methods=["POST"])
+@login_required
+def submit_review():
+    data = request.get_json()
+    movie_title = data.get("movie_title")
+    rating = data.get("rating")
+    comment = data.get("comment")
+    
+    if not movie_title or not rating:
+        return jsonify({"success": False, "message": "Missing required fields"})
+        
+    new_review = Review(
+        user_id=current_user.id,
+        movie_title=movie_title,
+        rating=int(rating),
+        comment=comment
+    )
+    db.session.add(new_review)
+    db.session.commit()
+    
+    return jsonify({"success": True, "message": "Review submitted successfully!"})
 
 @app.route("/api/watchlist/toggle", methods=["POST"])
 @login_required

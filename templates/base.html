@@ -28,6 +28,7 @@
                     Watchlist</a>
                 <div class="user-menu">
                     <span class="username-display">Hi, {{ current_user.username }}</span>
+                    <a href="/profile" class="{{ 'active-link' if request.path == '/profile' else '' }}">Profile</a>
                     <a href="/logout" class="logout-btn">Logout</a>
                 </div>
                 {% else %}

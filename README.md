@@ -86,3 +86,31 @@ movie-recommendation/
 - Integrate with TMDB API for real-time posters and metadata.[done].
 - User accounts to save watchlists and favorite movies.[done].
 - Advanced filtering by year, genre, and rating.[done].
+
+
+## Key Improvements
+1. User Reviews System
+What's New: Users can now rate and review movies directly on the Movie Details page.
+How it works:
+Go to any movie page.
+If logged in, you'll see a "Leave a Review" section with a 5-star rating selector.
+Submit your review and see it appear instantly in the "User Reviews" list below.
+2. Modyverse Fixed & Upgrade
+What's New: The "Modyverse" mood-based recommendation engine is now fully functional.
+Fix: Connected the frontend questionnaire to a dedicated API endpoint that uses Google Gemini to generate personalized suggestions based on your mood, story preference, and watching company.
+3. Enhanced User Profile
+What's New: A brand new, stylish Profile Dashboard.
+Features:
+Avatar: Generates a unique avatar based on your username (using DiceBear API). You can regenerate it with a click!
+Bio: Add a personal bio to share your movie taste with the world.
+Stats: View your total Watchlist count and Reviews count at a glance.
+My Reviews: See a history of all the reviews you've written.
+Watchlist: (Existing feature) View your saved movies.
+
+
+## Visuals (Mockup)
+Movie Details with Reviews
+The movie page now features a User Reviews section right below the cast list.
+
+Profile Page
+Navigate to your profile by clicking your username in the navbar to edit your bio and see your stats.

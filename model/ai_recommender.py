@@ -1,4 +1,10 @@
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except (ImportError, AttributeError, Exception) as e:
+    print(f"Warning: Failed to import google.generativeai: {e}")
+    genai = None
+    GENAI_AVAILABLE = False
 import os
 from dotenv import load_dotenv
 
@@ -6,16 +12,20 @@ load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+if GEMINI_API_KEY and GENAI_AVAILABLE:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Error configuring Gemini: {e}")
+        GENAI_AVAILABLE = False
 
 def get_ai_recommendation(query, movie_context=None):
     """
     Asks Gemini for movie recommendations based on user query.
     movie_context: Optional list of movies the user already liked or is looking at.
     """
-    if not GEMINI_API_KEY:
-        return "I'm sorry, my brain (API Key) is missing. Please configure the Gemini API Key."
+    if not GEMINI_API_KEY or not GENAI_AVAILABLE:
+        return "I'm sorry, I cannot think right now (AI library or key missing)."
 
     try:
         model = genai.GenerativeModel('gemini-2.0-flash')
@@ -43,8 +53,8 @@ def get_mood_recommendation(answers):
     """
     answers: dict containing 'mood', 'story_type', 'company'
     """
-    if not GEMINI_API_KEY:
-         return "API Key missing."
+    if not GEMINI_API_KEY or not GENAI_AVAILABLE:
+         return "API Key or Library missing."
 
     try:
         model = genai.GenerativeModel('gemini-2.0-flash')

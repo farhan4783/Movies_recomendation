@@ -137,6 +137,62 @@
         </section>
         {% endif %}
 
+        <!-- Reviews Section -->
+        <section class="reviews-section" style="margin-bottom: 4rem;">
+            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">User
+                Reviews</h2>
+
+            {% if current_user.is_authenticated %}
+            <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Leave a Review</h3>
+                <form id="review-form" onsubmit="submitReview(event)">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">Rating</label>
+                        <div class="star-rating"
+                            style="display: flex; gap: 0.5rem; font-size: 1.5rem; cursor: pointer;">
+                            <span onclick="setRating(1)">★</span>
+                            <span onclick="setRating(2)">★</span>
+                            <span onclick="setRating(3)">★</span>
+                            <span onclick="setRating(4)">★</span>
+                            <span onclick="setRating(5)">★</span>
+                        </div>
+                        <input type="hidden" name="rating" id="rating-input" required>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">Comment</label>
+                        <textarea name="comment" rows="3" placeholder="Share your thoughts..." required
+                            style="width: 100%;"></textarea>
+                    </div>
+                    <button type="submit" class="primary-btn">Submit Review</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem; text-align: center;">
+                <p>Please <a href="/login?next={{ request.path }}" style="color: var(--primary-color);">login</a> to
+                    leave a review.</p>
+            </div>
+            {% endif %}
+
+            <div class="reviews-list">
+                {% if reviews %}
+                {% for review in reviews %}
+                <div class="review-card glass-panel" style="padding: 1.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <strong>{{ review.user.username }}</strong>
+                        <span style="color: #ffd700;">
+                            {% for i in range(review.rating) %}★{% endfor %}
+                        </span>
+                    </div>
+                    <p style="color: #ddd;">{{ review.comment }}</p>
+                    <small style="color: #666;">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color: #888;">No reviews yet. Be the first!</p>
+                {% endif %}
+            </div>
+        </section>
+
         <!-- Trailer Section -->
         {% if movie.trailer_url %}
         <section class="trailer-section" style="margin-bottom: 4rem;">
@@ -221,6 +277,48 @@
         } catch (e) {
             console.error(e);
             btn.disabled = false;
+        }
+    }
+
+    let currentRating = 0;
+    function setRating(n) {
+        currentRating = n;
+        document.getElementById('rating-input').value = n;
+        const stars = document.querySelectorAll('.star-rating span');
+        stars.forEach((star, index) => {
+            star.style.color = index < n ? '#ffd700' : '#444';
+        });
+    }
+
+    async function submitReview(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/submit_review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    movie_title: movieData.title,
+                    rating: currentRating,
+                    comment: formData.get('comment')
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error submitting review');
+                submitBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred');
+            submitBtn.disabled = false;
         }
     }
 </script>
