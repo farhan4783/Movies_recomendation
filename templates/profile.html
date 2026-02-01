@@ -51,6 +51,36 @@
         </div>
     </div>
 
+    <!-- Achievements Section -->
+    <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">🏆 Achievements
+    </h2>
+    <div class="achievements-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 4rem;">
+        {% for ach in achievements %}
+        <div class="achievement-card glass-panel"
+            style="padding: 1.5rem; text-align: center; {% if ach.is_earned %}border: 2px solid var(--primary-color);{% else %}opacity: 0.6;{% endif %}">
+            <div class="achievement-icon" style="font-size: 3rem; margin-bottom: 0.5rem;">
+                {{ ach.achievement.icon }}
+            </div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">{{ ach.achievement.name }}</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">{{
+                ach.achievement.description }}</p>
+
+            {% if ach.is_earned %}
+            <div style="color: var(--primary-color); font-weight: bold;">✓ Earned!</div>
+            {% else %}
+            <div class="progress-bar"
+                style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem;">
+                <div
+                    style="background: var(--primary-color); height: 100%; width: {{ ach.progress }}%; transition: width 0.3s ease;">
+                </div>
+            </div>
+            <small style="color: var(--text-secondary);">{{ ach.current }} / {{ ach.required }}</small>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
     <!-- User Reviews Tab -->
     <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">My Reviews</h2>
     <div class="reviews-grid" style="display: grid; gap: 1.5rem;">

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}My Lists - The Point Blank{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 4rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem;">📚 My Movie Lists</h1>
+        <button class="primary-btn" onclick="showCreateListModal()">+ Create New List</button>
+    </div>
+
+    <!-- Lists Grid -->
+    <div class="lists-grid" style="display: grid; gap: 2rem;">
+        {% if lists %}
+        {% for list in lists %}
+        <div class="list-card glass-panel" style="padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <h2 style="margin-bottom: 0.5rem;">{{ list.name }}</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">{{ list.description or 'No
+                        description' }}</p>
+                    <small style="color: #666;">{{ list.items|length }} movies • Created {{ list.created_at.strftime('%b
+                        %d, %Y') }}</small>
+                </div>
+                <button class="secondary-btn" onclick="deleteList({{ list.id }})"
+                    style="padding: 0.5rem 1rem; font-size: 0.9rem;">Delete</button>
+            </div>
+
+            <!-- Movies in List -->
+            {% if list.items %}
+            <div class="list-movies"
+                style="display: flex; gap: 1rem; overflow-x: auto; padding: 1rem 0; margin-top: 1rem;">
+                {% for item in list.items[:5] %}
+                <div style="min-width: 120px;">
+                    <img src="{{ item.poster_path or 'https://via.placeholder.com/120x180' }}"
+                        alt="{{ item.movie_title }}"
+                        style="width: 120px; height: 180px; object-fit: cover; border-radius: 8px; cursor: pointer;"
+                        onclick="window.location.href='/movie/{{ item.movie_title|urlencode }}'">
+                </div>
+                {% endfor %}
+                {% if list.items|length > 5 %}
+                <div
+                    style="min-width: 120px; height: 180px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
+                    +{{ list.items|length - 5 }} more
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <p style="color: #888; font-style: italic; margin-top: 1rem;">No movies in this list yet.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="glass-panel" style="padding: 3rem; text-align: center;">
+            <p style="color: #888; font-size: 1.2rem; margin-bottom: 1.5rem;">You haven't created any lists yet.</p>
+            <button class="primary-btn" onclick="showCreateListModal()">Create Your First List</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create List Modal -->
+<div id="create-list-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-panel" style="padding: 3rem; max-width: 500px; width: 90%; margin: 2rem;">
+        <h2 style="margin-bottom: 2rem;">Create New List</h2>
+        <form id="create-list-form" onsubmit="createList(event)">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">List Name</label>
+                <input type="text" id="list-name" required placeholder="e.g., Best Sci-Fi Movies" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">Description (Optional)</label>
+                <textarea id="list-description" rows="3" placeholder="What's this list about?"
+                    style="width: 100%;"></textarea>
+            </div>
+            <div style="margin-bottom: 2rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="list-public" checked>
+                    <span>Make this list public</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="primary-btn" style="flex: 1;">Create List</button>
+                <button type="button" class="secondary-btn" onclick="hideCreateListModal()"
+                    style="flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showCreateListModal() {
+        document.getElementById('create-list-modal').style.display = 'flex';
+    }
+
+    function hideCreateListModal() {
+        document.getElementById('create-list-modal').style.display = 'none';
+        document.getElementById('create-list-form').reset();
+    }
+
+    async function createList(e) {
+        e.preventDefault();
+        const name = document.getElementById('list-name').value;
+        const description = document.getElementById('list-description').value;
+        const isPublic = document.getElementById('list-public').checked;
+
+        try {
+            const response = await fetch('/api/lists/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description, is_public: isPublic })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // Show achievement notification if earned
+                if (data.new_achievements && data.new_achievements.length > 0) {
+                    alert('🎉 Achievement Unlocked: ' + data.new_achievements.join(', '));
+                }
+                location.reload();
+            } else {
+                alert(data.message || 'Error creating list');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error creating list');
+        }
+    }
+
+    async function deleteList(listId) {
+        if (!confirm('Are you sure you want to delete this list?')) return;
+
+        try {
+            const response = await fetch(`/api/lists/${listId}/delete`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error deleting list');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error deleting list');
+        }
+    }
+
+    // Close modal on outside click
+    document.getElementById('create-list-modal')?.addEventListener('click', function (e) {
+        if (e.target === this) {
+            hideCreateListModal();
+        }
+    });
+</script>
+{% endblock %}

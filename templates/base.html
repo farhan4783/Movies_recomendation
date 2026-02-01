@@ -26,6 +26,7 @@
                 {% if current_user.is_authenticated %}
                 <a href="/watchlist" class="{{ 'active-link' if request.path == '/watchlist' else '' }}">My
                     Watchlist</a>
+                <a href="/lists" class="{{ 'active-link' if request.path == '/lists' else '' }}">My Lists</a>
                 <div class="user-menu">
                     <span class="username-display">Hi, {{ current_user.username }}</span>
                     <a href="/profile" class="{{ 'active-link' if request.path == '/profile' else '' }}">Profile</a>
@@ -36,6 +37,40 @@
                 <a href="/register" class="signup-btn">Sign Up</a>
                 {% endif %}
             </div>
+
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme" style="
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid var(--glass-border);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                margin-left: 1rem;
+            " onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'"
+                onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'">
+                <svg id="theme-icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" style="display: none;">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg id="theme-icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+
             <div class="hamburger" onclick="toggleMenu()">
                 <span></span>
                 <span></span>
@@ -91,6 +126,37 @@
                 document.getElementById('navLinks').classList.remove('active');
             }
         });
+
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const sunIcon = document.getElementById('theme-icon-sun');
+            const moonIcon = document.getElementById('theme-icon-moon');
+
+            if (theme === 'light') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        }
+
+        // Initialize theme on page load
+        (function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        })();
     </script>
     {% block scripts %}{% endblock %}
 </body>

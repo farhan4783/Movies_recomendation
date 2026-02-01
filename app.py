@@ -8,7 +8,8 @@ from model.recommenders import PopularityRecommender, ContentBasedRecommender, C
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation
 from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details
 from model import db
-from model.models import User, Watchlist, Review
+from model.models import User, Watchlist, Review, MovieList, ListItem
+from utils.achievements import initialize_achievements, check_and_award_achievements, get_achievement_progress
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super_secret_key_change_this")
@@ -31,6 +32,8 @@ def load_user(user_id):
 # Create Database Tables
 with app.app_context():
     db.create_all()
+    # Initialize achievements
+    initialize_achievements()
 
 # Load Data Globaly
 try:
@@ -229,9 +232,11 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
+    from utils.achievements import get_achievement_progress
     reviews = Review.query.filter_by(user_id=current_user.id).order_by(Review.created_at.desc()).all()
     watchlist_count = Watchlist.query.filter_by(user_id=current_user.id).count()
-    return render_template('profile.html', user=current_user, reviews=reviews, watchlist_count=watchlist_count)
+    achievement_progress = get_achievement_progress(current_user.id)
+    return render_template('profile.html', user=current_user, reviews=reviews, watchlist_count=watchlist_count, achievements=achievement_progress)
 
 @app.route('/api/profile/update', methods=['POST'])
 @login_required
@@ -315,7 +320,10 @@ def submit_review():
     db.session.add(new_review)
     db.session.commit()
     
-    return jsonify({"success": True, "message": "Review submitted successfully!"})
+    # Check for new achievements
+    newly_earned = check_and_award_achievements(current_user.id)
+    
+    return jsonify({"success": True, "message": "Review submitted successfully!", "new_achievements": [a.name for a in newly_earned]})
 
 @app.route("/api/watchlist/toggle", methods=["POST"])
 @login_required
@@ -339,13 +347,114 @@ def toggle_watchlist():
         action = "added"
         
     db.session.commit()
-    return jsonify({"success": True, "action": action})
+    
+    # Check for new achievements if added
+    newly_earned = []
+    if action == "added":
+        newly_earned = check_and_award_achievements(current_user.id)
+    
+    return jsonify({"success": True, "action": action, "new_achievements": [a.name for a in newly_earned]})
 
 @app.route("/watchlist")
 @login_required
 def watchlist_page():
     wl_items = Watchlist.query.filter_by(user_id=current_user.id).all()
     return render_template("watchlist.html", movies=wl_items, user=current_user)
+
+@app.route("/api/achievements")
+@login_required
+def get_achievements():
+    """Get user's achievement progress"""
+    progress = get_achievement_progress(current_user.id)
+    return jsonify({"achievements": [
+        {
+            "name": p["achievement"].name,
+            "description": p["achievement"].description,
+            "icon": p["achievement"].icon,
+            "is_earned": p["is_earned"],
+            "progress": p["progress"],
+            "current": p["current"],
+            "required": p["required"]
+        } for p in progress
+    ]})
+
+@app.route("/lists")
+@login_required
+def lists_page():
+    """View all user's custom movie lists"""
+    user_lists = MovieList.query.filter_by(user_id=current_user.id).order_by(MovieList.created_at.desc()).all()
+    return render_template("lists.html", lists=user_lists, user=current_user)
+
+@app.route("/api/lists/create", methods=["POST"])
+@login_required
+def create_list():
+    """Create a new movie list"""
+    data = request.get_json()
+    name = data.get("name")
+    description = data.get("description", "")
+    is_public = data.get("is_public", True)
+    
+    if not name:
+        return jsonify({"success": False, "message": "List name is required"})
+    
+    new_list = MovieList(
+        user_id=current_user.id,
+        name=name,
+        description=description,
+        is_public=is_public
+    )
+    db.session.add(new_list)
+    db.session.commit()
+    
+    # Check for achievements
+    newly_earned = check_and_award_achievements(current_user.id)
+    
+    return jsonify({"success": True, "list_id": new_list.id, "new_achievements": [a.name for a in newly_earned]})
+
+@app.route("/api/lists/<int:list_id>/add_movie", methods=["POST"])
+@login_required
+def add_movie_to_list(list_id):
+    """Add a movie to a list"""
+    movie_list = MovieList.query.get_or_404(list_id)
+    
+    # Check ownership
+    if movie_list.user_id != current_user.id:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
+    data = request.get_json()
+    movie_title = data.get("movie_title")
+    poster_path = data.get("poster_path")
+    tmdb_id = data.get("tmdb_id")
+    
+    # Check if already in list
+    existing = ListItem.query.filter_by(list_id=list_id, movie_title=movie_title).first()
+    if existing:
+        return jsonify({"success": False, "message": "Movie already in list"})
+    
+    list_item = ListItem(
+        list_id=list_id,
+        movie_title=movie_title,
+        poster_path=poster_path,
+        tmdb_id=tmdb_id
+    )
+    db.session.add(list_item)
+    db.session.commit()
+    
+    return jsonify({"success": True})
+
+@app.route("/api/lists/<int:list_id>/delete", methods=["DELETE"])
+@login_required
+def delete_list(list_id):
+    """Delete a movie list"""
+    movie_list = MovieList.query.get_or_404(list_id)
+    
+    if movie_list.user_id != current_user.id:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
+    db.session.delete(movie_list)
+    db.session.commit()
+    
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":

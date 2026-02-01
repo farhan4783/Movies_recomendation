@@ -137,6 +137,107 @@
         </section>
         {% endif %}
 
+        <!-- Where to Watch Section -->
+        {% if movie.watch_providers and (movie.watch_providers.flatrate or movie.watch_providers.rent or
+        movie.watch_providers.buy) %}
+        <section class="watch-providers-section" style="margin-bottom: 4rem;">
+            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">Where to
+                Watch</h2>
+
+            <div class="glass-panel" style="padding: 2rem;">
+                {% if movie.watch_providers.flatrate %}
+                <div class="provider-category" style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-secondary);">Stream</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        {% for provider in movie.watch_providers.flatrate %}
+                        <div class="provider-item" style="
+                            background: rgba(255, 255, 255, 0.05);
+                            border: 1px solid var(--glass-border);
+                            border-radius: 12px;
+                            padding: 0.8rem 1.2rem;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.8rem;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(-2px)'"
+                            onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)'">
+                            {% if provider.logo %}
+                            <img src="{{ provider.logo }}" alt="{{ provider.name }}"
+                                style="width: 40px; height: 40px; border-radius: 8px;">
+                            {% endif %}
+                            <span style="font-weight: 500;">{{ provider.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if movie.watch_providers.rent %}
+                <div class="provider-category" style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-secondary);">Rent</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        {% for provider in movie.watch_providers.rent %}
+                        <div class="provider-item" style="
+                            background: rgba(255, 255, 255, 0.05);
+                            border: 1px solid var(--glass-border);
+                            border-radius: 12px;
+                            padding: 0.8rem 1.2rem;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.8rem;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(-2px)'"
+                            onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)'">
+                            {% if provider.logo %}
+                            <img src="{{ provider.logo }}" alt="{{ provider.name }}"
+                                style="width: 40px; height: 40px; border-radius: 8px;">
+                            {% endif %}
+                            <span style="font-weight: 500;">{{ provider.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if movie.watch_providers.buy %}
+                <div class="provider-category">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-secondary);">Buy</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        {% for provider in movie.watch_providers.buy %}
+                        <div class="provider-item" style="
+                            background: rgba(255, 255, 255, 0.05);
+                            border: 1px solid var(--glass-border);
+                            border-radius: 12px;
+                            padding: 0.8rem 1.2rem;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.8rem;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(-2px)'"
+                            onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)'">
+                            {% if provider.logo %}
+                            <img src="{{ provider.logo }}" alt="{{ provider.name }}"
+                                style="width: 40px; height: 40px; border-radius: 8px;">
+                            {% endif %}
+                            <span style="font-weight: 500;">{{ provider.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if movie.watch_providers.link %}
+                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                    <a href="{{ movie.watch_providers.link }}" target="_blank" rel="noopener noreferrer"
+                        style="color: var(--primary-color); font-size: 0.9rem; text-decoration: underline;">
+                        View all watch options on TMDB →
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
         <!-- Reviews Section -->
         <section class="reviews-section" style="margin-bottom: 4rem;">
             <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">User

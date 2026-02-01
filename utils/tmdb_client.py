@@ -72,6 +72,56 @@ def fetch_popular_movies(page=1):
         print(f"Error fetching popular movies: {e}")
         return []
 
+def fetch_watch_providers(movie_id, region="US"):
+    """
+    Fetches streaming availability (watch providers) for a movie.
+    Returns platforms where the movie is available to stream, rent, or buy.
+    """
+    if not TMDB_API_KEY:
+        return None
+    
+    try:
+        url = f"{BASE_URL}/movie/{movie_id}/watch/providers"
+        params = {"api_key": TMDB_API_KEY}
+        response = requests.get(url, params=params)
+        data = response.json()
+        
+        # Get providers for specified region
+        providers_data = data.get("results", {}).get(region, {})
+        
+        result = {
+            "link": providers_data.get("link"),  # TMDB link to watch options
+            "flatrate": [],  # Streaming (subscription)
+            "rent": [],      # Rent options
+            "buy": []        # Buy options
+        }
+        
+        # Process streaming platforms
+        for provider in providers_data.get("flatrate", []):
+            result["flatrate"].append({
+                "name": provider.get("provider_name"),
+                "logo": f"{IMAGE_BASE_URL}{provider.get('logo_path')}" if provider.get("logo_path") else None
+            })
+            
+        # Process rental options
+        for provider in providers_data.get("rent", []):
+            result["rent"].append({
+                "name": provider.get("provider_name"),
+                "logo": f"{IMAGE_BASE_URL}{provider.get('logo_path')}" if provider.get("logo_path") else None
+            })
+            
+        # Process buy options
+        for provider in providers_data.get("buy", []):
+            result["buy"].append({
+                "name": provider.get("provider_name"),
+                "logo": f"{IMAGE_BASE_URL}{provider.get('logo_path')}" if provider.get("logo_path") else None
+            })
+        
+        return result
+    except Exception as e:
+        print(f"Error fetching watch providers for movie {movie_id}: {e}")
+        return None
+
 def fetch_full_movie_details(title):
     """
     Fetches comprehensive movie details including cast, runtime, backdrop, and similar movies.
@@ -114,6 +164,9 @@ def fetch_full_movie_details(title):
             if video.get("type") == "Trailer" and video.get("site") == "YouTube":
                 trailer_key = video.get("key")
                 break
+        
+        # Get Watch Providers
+        watch_providers = fetch_watch_providers(movie_id)
                 
         return {
             "id": data.get("id"),
@@ -128,7 +181,8 @@ def fetch_full_movie_details(title):
             "tagline": data.get("tagline"),
             "cast": cast,
             "trailer_url": f"https://www.youtube.com/embed/{trailer_key}" if trailer_key else None,
-            "similar": data.get("similar", {}).get("results", [])[:6]
+            "similar": data.get("similar", {}).get("results", [])[:6],
+            "watch_providers": watch_providers
         }
     except Exception as e:
         print(f"Error fetching full details for {title}: {e}")
