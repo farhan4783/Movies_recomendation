@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}The Point Blank{% endblock %}</title>
+    <title>{% block title %}Movie Maverick{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;600;800&display=swap"
@@ -17,9 +17,10 @@
     <!-- Sticky Navbar -->
     <nav class="sticky-nav">
         <div class="nav-content">
-            <a href="/" class="nav-logo">The Point Blank</a>
+            <a href="/" class="nav-logo">Movie Maverick</a>
             <div class="nav-links" id="navLinks">
-                <a href="/" class="{{ 'active-link' if request.path == '/' else '' }}">Home</a>
+                <a href="/" class="{{ 'active-link' if request.path == '/' else '' }}">About</a>
+                <a href="/explore" class="{{ 'active-link' if request.path == '/explore' else '' }}">Explore</a>
                 <a href="/modyverse" class="{{ 'active-link' if request.path == '/modyverse' else '' }}">Modyverse</a>
                 <a href="/chat" class="{{ 'active-link' if request.path == '/chat' else '' }}">AI Chat</a>
 
@@ -100,14 +101,14 @@
     <!-- Footer -->
     <footer>
         <div class="container footer-content">
-            <div class="footer-logo">The Point Blank</div>
+            <div class="footer-logo">Movie Maverick</div>
             <p class="footer-text">Advanced AI-Powered Movie Recommendations</p>
             <div class="footer-links">
                 <a href="#">Privacy Policy</a>
                 <a href="#">Terms of Service</a>
                 <a href="#">Contact</a>
             </div>
-            <p class="copyright">&copy; {{ 2025 }} The Point Blank. All rights reserved.</p>
+            <p class="copyright">&copy; {{ 2025 }} Movie Maverick. All rights reserved.</p>
         </div>
     </footer>
 

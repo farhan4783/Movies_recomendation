@@ -54,8 +54,13 @@ except Exception as e:
     movies_df = pd.DataFrame()
     pop_model = None
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
+    """Landing page - About Movie Maverick"""
+    return render_template("about.html", user=current_user)
+
+@app.route("/explore", methods=["GET", "POST"])
+def explore_page():
     recommendations = []
     selected_movie = None
     selected_movies = []
@@ -197,7 +202,7 @@ def login():
         
         if user and check_password_hash(user.password, password):
             login_user(user)
-            return redirect(url_for('index'))
+            return redirect(url_for('explore_page'))
         else:
             return render_template('login.html', error='Invalid username or password')
             
@@ -219,7 +224,7 @@ def register():
         db.session.commit()
         
         login_user(new_user)
-        return redirect(url_for('index'))
+        return redirect(url_for('explore_page'))
         
     return render_template('register.html')
 

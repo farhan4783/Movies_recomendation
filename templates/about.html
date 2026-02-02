@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Movie Maverick{% endblock %}
+
+{% block head %}
+<style>
+    /* About Page Specific Styles */
+    .about-hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    /* Animated Background */
+    .animated-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+    }
+
+    [data-theme="light"] .animated-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+        opacity: 0.15;
+    }
+
+    @keyframes gradientShift {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    /* Floating Particles */
+    .particle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        animation: float 20s infinite;
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0;
+        }
+
+        10% {
+            opacity: 1;
+        }
+
+        90% {
+            opacity: 1;
+        }
+
+        100% {
+            transform: translateY(-100vh) translateX(100px);
+            opacity: 0;
+        }
+    }
+
+    /* Hero Content */
+    .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+    }
+
+    .hero-logo {
+        font-size: 5rem;
+        font-weight: 800;
+        font-family: 'Outfit', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        animation: fadeInUp 1s ease;
+        line-height: 1.2;
+    }
+
+    [data-theme="light"] .hero-logo {
+        background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 50%, #d87ee6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-tagline {
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        margin-bottom: 3rem;
+        animation: fadeInUp 1s ease 0.2s backwards;
+    }
+
+    .explore-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem 3rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        animation: fadeInUp 1s ease 0.4s backwards, pulse 2s ease infinite;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+        text-decoration: none;
+    }
+
+    .explore-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    /* Features Section */
+    .features-section {
+        padding: 6rem 2rem;
+        background: var(--bg-secondary);
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .section-subtitle {
+        text-align: center;
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        margin-bottom: 4rem;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .feature-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 2.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    [data-theme="light"] .feature-card {
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        display: block;
+    }
+
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .feature-description {
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    /* Stats Section */
+    .stats-section {
+        padding: 6rem 2rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 3rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .stat-item {
+        animation: fadeInUp 1s ease;
+    }
+
+    .stat-number {
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-family: 'Outfit', sans-serif;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .hero-logo {
+            font-size: 3rem;
+        }
+
+        .hero-tagline {
+            font-size: 1.2rem;
+        }
+
+        .explore-btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="about-hero">
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Floating Particles -->
+    <div class="particle" style="width: 80px; height: 80px; left: 10%; animation-delay: 0s;"></div>
+    <div class="particle" style="width: 60px; height: 60px; left: 20%; animation-delay: 2s;"></div>
+    <div class="particle" style="width: 100px; height: 100px; left: 80%; animation-delay: 4s;"></div>
+    <div class="particle" style="width: 70px; height: 70px; left: 70%; animation-delay: 1s;"></div>
+    <div class="particle" style="width: 90px; height: 90px; left: 50%; animation-delay: 3s;"></div>
+    <div class="particle" style="width: 50px; height: 50px; left: 30%; animation-delay: 5s;"></div>
+
+    <!-- Hero Content -->
+    <div class="hero-content">
+        <h1 class="hero-logo">Movie Maverick</h1>
+        <p class="hero-tagline">Discover Your Next Favorite Film with AI-Powered Precision</p>
+        <a href="/explore" class="explore-btn">
+            <span>Explore Movies</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+        </a>
+    </div>
+</div>
+
+<!-- Features Section -->
+<section class="features-section">
+    <div class="container">
+        <h2 class="section-title">Why Movie Maverick?</h2>
+        <p class="section-subtitle">Experience the future of movie discovery</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🤖</span>
+                <h3 class="feature-title">AI-Powered Recommendations</h3>
+                <p class="feature-description">
+                    Advanced machine learning algorithms analyze your preferences to suggest movies you'll love.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🎭</span>
+                <h3 class="feature-title">Mood-Based Discovery</h3>
+                <p class="feature-description">
+                    Tell us how you're feeling, and we'll find the perfect movie to match your mood.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">💬</span>
+                <h3 class="feature-title">AI Chat Assistant</h3>
+                <p class="feature-description">
+                    Have a conversation with our AI to get personalized movie suggestions and insights.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">📚</span>
+                <h3 class="feature-title">Personal Watchlist</h3>
+                <p class="feature-description">
+                    Save movies you want to watch and organize them into custom lists.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">⭐</span>
+                <h3 class="feature-title">Reviews & Ratings</h3>
+                <p class="feature-description">
+                    Share your thoughts and read what others think about your favorite films.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🏆</span>
+                <h3 class="feature-title">Achievement System</h3>
+                <p class="feature-description">
+                    Unlock badges and achievements as you explore and engage with movies.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">10K+</div>
+                <div class="stat-label">Movies</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">100K+</div>
+                <div class="stat-label">Recommendations</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">AI</div>
+                <div class="stat-label">Powered</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Available</div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
