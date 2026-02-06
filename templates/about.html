@@ -4,7 +4,61 @@
 
 {% block head %}
 <style>
-    /* About Page Specific Styles */
+    /* ==================== SCROLL PROGRESS INDICATOR ==================== */
+    .scroll-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        z-index: 10000;
+        transition: width 0.1s ease;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    }
+
+    /* ==================== CUSTOM CURSOR TRAIL ==================== */
+    .cursor-dot {
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+    }
+
+    .cursor-outline {
+        width: 32px;
+        height: 32px;
+        border: 2px solid rgba(102, 126, 234, 0.5);
+        border-radius: 50%;
+        position: fixed;
+        pointer-events: none;
+        z-index: 9998;
+        opacity: 0;
+        transition: all 0.15s ease;
+    }
+
+    /* ==================== 3D PARTICLE BACKGROUND ==================== */
+    #particle-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: 0.6;
+    }
+
+    [data-theme="light"] #particle-canvas {
+        opacity: 0.3;
+    }
+
+    /* ==================== HERO SECTION ==================== */
     .about-hero {
         min-height: 100vh;
         display: flex;
@@ -36,17 +90,9 @@
     }
 
     @keyframes gradientShift {
-        0% {
-            background-position: 0% 50%;
-        }
-
-        50% {
-            background-position: 100% 50%;
-        }
-
-        100% {
-            background-position: 0% 50%;
-        }
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
     /* Floating Particles */
@@ -58,21 +104,12 @@
     }
 
     @keyframes float {
-
-        0%,
-        100% {
+        0%, 100% {
             transform: translateY(0) translateX(0);
             opacity: 0;
         }
-
-        10% {
-            opacity: 1;
-        }
-
-        90% {
-            opacity: 1;
-        }
-
+        10% { opacity: 1; }
+        90% { opacity: 1; }
         100% {
             transform: translateY(-100vh) translateX(100px);
             opacity: 0;
@@ -95,7 +132,7 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin-bottom: 1rem;
-        animation: fadeInUp 1s ease;
+        animation: fadeInUp 1s ease, floatTitle 3s ease-in-out infinite;
         line-height: 1.2;
     }
 
@@ -104,6 +141,11 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+    }
+
+    @keyframes floatTitle {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
     }
 
     .hero-tagline {
@@ -126,13 +168,33 @@
         border-radius: 50px;
         cursor: pointer;
         transition: all 0.3s ease;
-        animation: fadeInUp 1s ease 0.4s backwards, pulse 2s ease infinite;
+        animation: fadeInUp 1s ease 0.4s backwards;
         box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
         text-decoration: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .explore-btn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .explore-btn:hover::before {
+        width: 300px;
+        height: 300px;
     }
 
     .explore-btn:hover {
-        transform: translateY(-3px);
+        transform: translateY(-3px) scale(1.05);
         box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
     }
 
@@ -141,29 +203,17 @@
             opacity: 0;
             transform: translateY(30px);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
 
-    @keyframes pulse {
-
-        0%,
-        100% {
-            transform: scale(1);
-        }
-
-        50% {
-            transform: scale(1.05);
-        }
-    }
-
-    /* Features Section */
+    /* ==================== FEATURES SECTION ==================== */
     .features-section {
         padding: 6rem 2rem;
         background: var(--bg-secondary);
+        position: relative;
     }
 
     .section-title {
@@ -172,6 +222,14 @@
         font-weight: 700;
         margin-bottom: 1rem;
         font-family: 'Outfit', sans-serif;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+
+    .section-title.animate-in {
+        opacity: 1;
+        transform: translateY(0);
     }
 
     .section-subtitle {
@@ -179,6 +237,14 @@
         font-size: 1.2rem;
         color: var(--text-secondary);
         margin-bottom: 4rem;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease 0.2s;
+    }
+
+    .section-subtitle.animate-in {
+        opacity: 1;
+        transform: translateY(0);
     }
 
     .features-grid {
@@ -195,8 +261,33 @@
         border: 1px solid var(--glass-border);
         border-radius: 20px;
         padding: 2.5rem;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         cursor: pointer;
+        opacity: 0;
+        transform: translateY(50px);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card.animate-in {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .feature-card:hover::before {
+        opacity: 1;
     }
 
     [data-theme="light"] .feature-card {
@@ -205,7 +296,7 @@
     }
 
     .feature-card:hover {
-        transform: translateY(-10px);
+        transform: translateY(-15px) scale(1.02);
         box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
         border-color: rgba(102, 126, 234, 0.5);
     }
@@ -214,6 +305,22 @@
         font-size: 3rem;
         margin-bottom: 1.5rem;
         display: block;
+        animation: bounceIcon 2s ease-in-out infinite;
+    }
+
+    @keyframes bounceIcon {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .feature-card:hover .feature-icon {
+        animation: rotateIcon 0.6s ease;
+    }
+
+    @keyframes rotateIcon {
+        0% { transform: rotate(0deg) scale(1); }
+        50% { transform: rotate(10deg) scale(1.2); }
+        100% { transform: rotate(0deg) scale(1); }
     }
 
     .feature-title {
@@ -221,17 +328,39 @@
         font-weight: 600;
         margin-bottom: 1rem;
         font-family: 'Outfit', sans-serif;
+        position: relative;
+        z-index: 1;
     }
 
     .feature-description {
         color: var(--text-secondary);
         line-height: 1.6;
+        position: relative;
+        z-index: 1;
     }
 
-    /* Stats Section */
+    /* ==================== STATS SECTION ==================== */
     .stats-section {
         padding: 6rem 2rem;
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+        animation: rotateGradient 20s linear infinite;
+    }
+
+    @keyframes rotateGradient {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     .stats-grid {
@@ -241,10 +370,19 @@
         max-width: 1000px;
         margin: 0 auto;
         text-align: center;
+        position: relative;
+        z-index: 1;
     }
 
     .stat-item {
-        animation: fadeInUp 1s ease;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.6s ease;
+    }
+
+    .stat-item.animate-in {
+        opacity: 1;
+        transform: scale(1);
     }
 
     .stat-number {
@@ -256,6 +394,7 @@
         background-clip: text;
         font-family: 'Outfit', sans-serif;
         margin-bottom: 0.5rem;
+        display: inline-block;
     }
 
     .stat-label {
@@ -265,7 +404,308 @@
         letter-spacing: 1px;
     }
 
-    /* Responsive Design */
+    /* ==================== HOW IT WORKS SECTION ==================== */
+    .how-it-works-section {
+        padding: 6rem 2rem;
+        background: var(--surface-color);
+        position: relative;
+    }
+
+    .timeline {
+        max-width: 1000px;
+        margin: 0 auto;
+        position: relative;
+        padding: 2rem 0;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, transparent, #667eea, #764ba2, transparent);
+        transform: translateX(-50%);
+    }
+
+    .timeline-item {
+        display: flex;
+        margin-bottom: 4rem;
+        position: relative;
+        opacity: 0;
+        transform: translateX(-50px);
+        transition: all 0.6s ease;
+    }
+
+    .timeline-item.animate-in {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .timeline-item:nth-child(even) {
+        flex-direction: row-reverse;
+        transform: translateX(50px);
+    }
+
+    .timeline-item:nth-child(even).animate-in {
+        transform: translateX(0);
+    }
+
+    .timeline-content {
+        flex: 1;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        margin: 0 2rem;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .timeline-content:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    }
+
+    [data-theme="light"] .timeline-content {
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .timeline-number {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: white;
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        z-index: 2;
+    }
+
+    .timeline-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .timeline-description {
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    /* ==================== TECH STACK SECTION ==================== */
+    .tech-stack-section {
+        padding: 6rem 2rem;
+        background: var(--background-color);
+    }
+
+    .tech-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .tech-item {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: scale(0.8);
+        cursor: pointer;
+    }
+
+    .tech-item.animate-in {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .tech-item:hover {
+        transform: translateY(-10px) scale(1.05);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    [data-theme="light"] .tech-item {
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .tech-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .tech-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    /* ==================== FAQ SECTION ==================== */
+    .faq-section {
+        padding: 6rem 2rem;
+        background: var(--surface-color);
+    }
+
+    .faq-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .faq-item {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    .faq-item.animate-in {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    [data-theme="light"] .faq-item {
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .faq-question {
+        padding: 1.5rem 2rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .faq-icon {
+        font-size: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+
+    .faq-item.active .faq-icon {
+        transform: rotate(45deg);
+    }
+
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+        padding: 0 2rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    .faq-item.active .faq-answer {
+        max-height: 500px;
+        padding: 0 2rem 1.5rem 2rem;
+    }
+
+    /* ==================== CTA SECTION ==================== */
+    .cta-section {
+        padding: 8rem 2rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    .cta-section::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.3), transparent);
+        transform: translate(-50%, -50%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+        50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+    }
+
+    .cta-content {
+        position: relative;
+        z-index: 1;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .cta-title {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        font-family: 'Outfit', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .cta-description {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        margin-bottom: 3rem;
+    }
+
+    .cta-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.5rem 3.5rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 15px 50px rgba(102, 126, 234, 0.4);
+        text-decoration: none;
+        animation: ctaPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes ctaPulse {
+        0%, 100% { box-shadow: 0 15px 50px rgba(102, 126, 234, 0.4); }
+        50% { box-shadow: 0 20px 60px rgba(102, 126, 234, 0.6); }
+    }
+
+    .cta-button:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 20px 70px rgba(102, 126, 234, 0.7);
+    }
+
+    /* ==================== RESPONSIVE DESIGN ==================== */
     @media (max-width: 768px) {
         .hero-logo {
             font-size: 3rem;
@@ -291,11 +731,59 @@
         .stat-number {
             font-size: 2.5rem;
         }
+
+        .timeline::before {
+            left: 30px;
+        }
+
+        .timeline-item,
+        .timeline-item:nth-child(even) {
+            flex-direction: column;
+            transform: translateY(30px);
+        }
+
+        .timeline-item.animate-in,
+        .timeline-item:nth-child(even).animate-in {
+            transform: translateY(0);
+        }
+
+        .timeline-number {
+            left: 30px;
+        }
+
+        .timeline-content {
+            margin-left: 80px;
+            margin-right: 0;
+        }
+
+        .tech-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .cta-title {
+            font-size: 2rem;
+        }
+
+        .cursor-dot,
+        .cursor-outline {
+            display: none;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Scroll Progress Indicator -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Custom Cursor -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-outline" id="cursorOutline"></div>
+
+<!-- 3D Particle Background -->
+<canvas id="particle-canvas"></canvas>
+
 <!-- Hero Section -->
 <div class="about-hero">
     <!-- Animated Background -->
@@ -385,22 +873,384 @@
     <div class="container">
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-number">10K+</div>
+                <div class="stat-number" data-target="10000">0</div>
                 <div class="stat-label">Movies</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">100K+</div>
+                <div class="stat-number" data-target="100000">0</div>
                 <div class="stat-label">Recommendations</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">AI</div>
-                <div class="stat-label">Powered</div>
+                <div class="stat-number" data-target="99">0</div>
+                <div class="stat-label">AI Accuracy</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Available</div>
+                <div class="stat-number" data-target="24">0</div>
+                <div class="stat-label">Hours Available</div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- How It Works Section -->
+<section class="how-it-works-section">
+    <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Your journey to perfect movie recommendations</p>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Create Your Profile</h3>
+                    <p class="timeline-description">
+                        Sign up and tell us about your movie preferences. The more we know, the better our recommendations.
+                    </p>
+                </div>
+                <div class="timeline-number">1</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Explore & Rate</h3>
+                    <p class="timeline-description">
+                        Browse our extensive movie library and rate films you've watched. Our AI learns from your ratings.
+                    </p>
+                </div>
+                <div class="timeline-number">2</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Get Personalized Suggestions</h3>
+                    <p class="timeline-description">
+                        Receive tailored movie recommendations based on your unique taste and viewing history.
+                    </p>
+                </div>
+                <div class="timeline-number">3</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Discover & Enjoy</h3>
+                    <p class="timeline-description">
+                        Find your next favorite film and share your experience with our community of movie lovers.
+                    </p>
+                </div>
+                <div class="timeline-number">4</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tech Stack Section -->
+<section class="tech-stack-section">
+    <div class="container">
+        <h2 class="section-title">Powered By Advanced Technology</h2>
+        <p class="section-subtitle">Built with cutting-edge tools and frameworks</p>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <span class="tech-icon">🐍</span>
+                <div class="tech-name">Python</div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-icon">🤖</span>
+                <div class="tech-name">Machine Learning</div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-icon">🌐</span>
+                <div class="tech-name">Flask</div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-icon">🎨</span>
+                <div class="tech-name">Modern CSS</div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-icon">📊</span>
+                <div class="tech-name">Data Science</div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-icon">🔒</span>
+                <div class="tech-name">Secure Auth</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq-section">
+    <div class="container">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">Everything you need to know</p>
+
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>How does the AI recommendation system work?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Our AI uses advanced machine learning algorithms to analyze your viewing history, ratings, and preferences. It compares your taste with millions of data points to suggest movies you're most likely to enjoy.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Is Movie Maverick free to use?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Yes! Movie Maverick is completely free to use. Create an account, explore movies, get recommendations, and manage your watchlist without any cost.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Can I watch movies on Movie Maverick?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Movie Maverick is a recommendation platform. We help you discover great movies and show you where they're available to watch on popular streaming services.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>How accurate are the mood-based recommendations?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Our mood-based system analyzes movie themes, tones, and emotional content to match your current mood. The more you use it and provide feedback, the more accurate it becomes.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Can I share my watchlist with friends?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Yes! You can create custom lists and share them with friends. It's a great way to plan movie nights or exchange recommendations.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="cta-content">
+        <h2 class="cta-title">Ready to Discover Your Next Favorite Movie?</h2>
+        <p class="cta-description">
+            Join thousands of movie enthusiasts and let AI guide you to cinematic perfection.
+        </p>
+        <a href="/register" class="cta-button">
+            <span>Get Started Free</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+        </a>
+    </div>
+</section>
+
+<script>
+    // ==================== SCROLL PROGRESS INDICATOR ====================
+    window.addEventListener('scroll', () => {
+        const scrollProgress = document.getElementById('scrollProgress');
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrolled = (window.scrollY / scrollHeight) * 100;
+        scrollProgress.style.width = scrolled + '%';
+    });
+
+    // ==================== CUSTOM CURSOR ====================
+    const cursorDot = document.getElementById('cursorDot');
+    const cursorOutline = document.getElementById('cursorOutline');
+
+    let mouseX = 0, mouseY = 0;
+    let outlineX = 0, outlineY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        cursorDot.style.left = mouseX + 'px';
+        cursorDot.style.top = mouseY + 'px';
+        cursorDot.style.opacity = '1';
+        cursorOutline.style.opacity = '1';
+    });
+
+    function animateOutline() {
+        outlineX += (mouseX - outlineX) * 0.15;
+        outlineY += (mouseY - outlineY) * 0.15;
+        
+        cursorOutline.style.left = outlineX + 'px';
+        cursorOutline.style.top = outlineY + 'px';
+        
+        requestAnimationFrame(animateOutline);
+    }
+    animateOutline();
+
+    // ==================== 3D PARTICLE BACKGROUND ====================
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const particleCount = 100;
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.z = Math.random() * 1000;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
+            this.vz = Math.random() * 2 + 1;
+            this.size = Math.random() * 2 + 1;
+        }
+
+        update() {
+            this.z -= this.vz;
+            if (this.z <= 0) {
+                this.z = 1000;
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+            }
+
+            const scale = 1000 / (1000 + this.z);
+            this.screenX = (this.x - canvas.width / 2) * scale + canvas.width / 2;
+            this.screenY = (this.y - canvas.height / 2) * scale + canvas.height / 2;
+            this.screenSize = this.size * scale;
+        }
+
+        draw() {
+            const opacity = 1 - this.z / 1000;
+            const gradient = ctx.createRadialGradient(
+                this.screenX, this.screenY, 0,
+                this.screenX, this.screenY, this.screenSize * 2
+            );
+            gradient.addColorStop(0, `rgba(102, 126, 234, ${opacity})`);
+            gradient.addColorStop(1, `rgba(118, 75, 162, 0)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.screenX, this.screenY, this.screenSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        particles.forEach(particle => {
+            particle.update();
+            particle.draw();
+        });
+        
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    // ==================== INTERSECTION OBSERVER FOR ANIMATIONS ====================
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+            }
+        });
+    }, observerOptions);
+
+    // Observe all animated elements
+    document.querySelectorAll('.section-title, .section-subtitle, .feature-card, .stat-item, .timeline-item, .tech-item, .faq-item').forEach(el => {
+        observer.observe(el);
+    });
+
+    // ==================== ANIMATED COUNTERS ====================
+    const counters = document.querySelectorAll('.stat-number');
+    let hasAnimated = false;
+
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !hasAnimated) {
+                hasAnimated = true;
+                counters.forEach(counter => {
+                    const target = parseInt(counter.getAttribute('data-target'));
+                    const duration = 2000;
+                    const increment = target / (duration / 16);
+                    let current = 0;
+
+                    const updateCounter = () => {
+                        current += increment;
+                        if (current < target) {
+                            if (target >= 1000) {
+                                counter.textContent = Math.floor(current / 1000) + 'K+';
+                            } else {
+                                counter.textContent = Math.floor(current);
+                            }
+                            requestAnimationFrame(updateCounter);
+                        } else {
+                            if (target >= 1000) {
+                                counter.textContent = (target / 1000) + 'K+';
+                            } else if (target === 99) {
+                                counter.textContent = target + '%';
+                            } else {
+                                counter.textContent = target + '/7';
+                            }
+                        }
+                    };
+                    updateCounter();
+                });
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.stat-item').forEach(item => {
+        statsObserver.observe(item);
+    });
+
+    // ==================== FAQ ACCORDION ====================
+    document.querySelectorAll('.faq-question').forEach(question => {
+        question.addEventListener('click', () => {
+            const faqItem = question.parentElement;
+            const isActive = faqItem.classList.contains('active');
+            
+            // Close all other FAQs
+            document.querySelectorAll('.faq-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Toggle current FAQ
+            if (!isActive) {
+                faqItem.classList.add('active');
+            }
+        });
+    });
+
+    // ==================== STAGGERED ANIMATIONS FOR FEATURE CARDS ====================
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach((card, index) => {
+        card.style.transitionDelay = `${index * 0.1}s`;
+    });
+
+    const techItems = document.querySelectorAll('.tech-item');
+    techItems.forEach((item, index) => {
+        item.style.transitionDelay = `${index * 0.05}s`;
+    });
+</script>
 {% endblock %}
