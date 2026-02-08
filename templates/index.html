@@ -2,34 +2,210 @@
 
 {% block title %}Explore - Movie Maverick{% endblock %}
 
+{% block head %}
+<style>
+    /* Enhanced Filter Sidebar */
+    .filters-sidebar {
+        position: sticky;
+        top: 6rem;
+        max-height: calc(100vh - 8rem);
+        overflow-y: auto;
+    }
+
+    .filter-group {
+        margin-bottom: 1.5rem;
+        animation: fadeInLeft 0.6s ease backwards;
+    }
+
+    .filter-group:nth-child(1) {
+        animation-delay: 0.1s;
+    }
+
+    .filter-group:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .filter-group:nth-child(3) {
+        animation-delay: 0.3s;
+    }
+
+    /* Custom Range Slider */
+    input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    input[type="range"]::-moz-range-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+    }
+
+    /* Movie Chips */
+    .chip {
+        background: rgba(229, 9, 20, 0.15);
+        border: 1px solid var(--primary-color);
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--radius-full);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0.25rem;
+        animation: scaleIn 0.3s ease;
+        transition: all var(--transition-base);
+    }
+
+    .chip:hover {
+        background: rgba(229, 9, 20, 0.25);
+        transform: translateY(-2px);
+    }
+
+    .chip .close-btn {
+        cursor: pointer;
+        color: var(--primary-color);
+        font-weight: bold;
+        font-size: 1.2rem;
+        transition: all var(--transition-base);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+
+    .chip .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: rotate(90deg);
+    }
+
+    /* Search Input Enhancement */
+    #movie-input {
+        flex: 1;
+        transition: all var(--transition-base);
+    }
+
+    #movie-input:focus {
+        transform: scale(1.02);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: bounce 2s ease-in-out infinite;
+    }
+
+    /* Loading Skeleton */
+    .skeleton-card {
+        background: rgba(30, 30, 30, 0.4);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .skeleton-poster {
+        width: 100%;
+        aspect-ratio: 2/3;
+        background: linear-gradient(90deg,
+                rgba(255, 255, 255, 0.05) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0.05) 100%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-text {
+        height: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        margin: 0.5rem 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
-    <header>
+    <header data-animate="fadeInUp">
         <h1 class="hero-title">Movie Maverick</h1>
         <p class="subtitle">Discover your next favorite movie with the power of AI.</p>
     </header>
 
     <!-- Main Recommendation Form -->
-    <div class="search-section glass-panel" style="padding: 3rem; margin-bottom: 4rem; text-align: center;">
+    <div class="search-section glass-panel" style="padding: 3rem; margin-bottom: 4rem;" data-animate="fadeInUp"
+        data-delay="200">
         <h2 style="margin-bottom: 1rem;">Find Your Next Watch</h2>
         <p style="color: var(--text-secondary); margin-bottom: 2rem;">Add movies you've watched to get personalized
             recommendations.</p>
 
-        <form method="POST" action="/" class="rec-form" onsubmit="return validateForm()">
-            <!-- Flex container for Filters + Search -->
+        <form method="POST" action="/explore" class="rec-form" onsubmit="return validateForm()">
             <div class="search-container" style="display: flex; gap: 2rem; flex-wrap: wrap; text-align: left;">
 
                 <!-- Filters Sidebar -->
                 <div class="filters-sidebar glass-panel"
                     style="flex: 1; min-width: 250px; padding: 1.5rem; background: rgba(0,0,0,0.2);">
                     <h3
-                        style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
-                        Filters</h3>
+                        style="margin-bottom: 1.5rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="4" y1="21" x2="4" y2="14"></line>
+                            <line x1="4" y1="10" x2="4" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12" y2="3"></line>
+                            <line x1="20" y1="21" x2="20" y2="16"></line>
+                            <line x1="20" y1="12" x2="20" y2="3"></line>
+                            <line x1="1" y1="14" x2="7" y2="14"></line>
+                            <line x1="9" y1="8" x2="15" y2="8"></line>
+                            <line x1="17" y1="16" x2="23" y2="16"></line>
+                        </svg>
+                        Filters
+                    </h3>
 
-                    <div class="filter-group" style="margin-bottom: 1.5rem;">
+                    <div class="filter-group">
                         <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Genre</label>
-                        <select name="genre">
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
+                            🎭 Genre
+                        </label>
+                        <select name="genre" style="width: 100%;">
                             <option value="All">All Genres</option>
                             {% for g in genres %}
                             <option value="{{ g }}">{{ g }}</option>
@@ -37,54 +213,60 @@
                         </select>
                     </div>
 
-                    <div class="filter-group" style="margin-bottom: 1.5rem;">
+                    <div class="filter-group">
                         <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
-                            Min Year: <span id="year-val"
+                            style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
+                            📅 Min Year: <span id="year-val"
                                 style="color: var(--primary-color); font-weight: bold;">1970</span>
                         </label>
                         <input type="range" name="min_year" min="1970" max="2025" value="1970"
-                            oninput="document.getElementById('year-val').innerText = this.value"
-                            style="width: 100%; accent-color: var(--primary-color);">
+                            oninput="document.getElementById('year-val').innerText = this.value">
                     </div>
 
                     <div class="filter-group">
                         <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
-                            Min Rating: <span id="rating-val"
+                            style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
+                            ⭐ Min Rating: <span id="rating-val"
                                 style="color: var(--primary-color); font-weight: bold;">0</span>
                         </label>
                         <input type="range" name="min_rating" min="0" max="5" step="0.5" value="0"
-                            oninput="document.getElementById('rating-val').innerText = this.value"
-                            style="width: 100%; accent-color: var(--primary-color);">
+                            oninput="document.getElementById('rating-val').innerText = this.value">
                     </div>
                 </div>
 
                 <!-- Search Box Area -->
                 <div class="search-box-area" style="flex: 2; min-width: 300px;">
-                    <div class="input-group" style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
                         <input type="text" id="movie-input" list="movie-list" placeholder="Type a movie name..."
-                            autocomplete="off">
+                            autocomplete="off" style="flex: 1;">
                         <datalist id="movie-list">
                             {% for movie in movies %}
                             <option value="{{ movie.title }}">
                                 {% endfor %}
                         </datalist>
-                        <button type="button" class="secondary-btn" onclick="addMovie()">Add</button>
+                        <button type="button" class="secondary-btn" onclick="addMovie()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add
+                        </button>
                     </div>
 
                     <div id="selected-movies-container" class="chips-container"
-                        style="min-height: 60px; margin: 1.5rem 0;">
-                        <!-- Selected movies will appear here -->
+                        style="min-height: 60px; margin-bottom: 1.5rem;">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">No movies selected yet.</span>
                     </div>
 
                     <input type="hidden" name="selected_movies" id="selected-movies-input">
                     <button type="submit" class="primary-btn pulse-btn" style="width: 100%;">
-                        <span>Get Recommendations</span>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
-                            <path d="M5 12h14M12 5l7 7-7 7" />
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
                         </svg>
+                        <span>Get Recommendations</span>
                     </button>
                 </div>
             </div>
@@ -93,8 +275,7 @@
 
     <!-- Error Message -->
     {% if error %}
-    <div class="error-banner glass-panel"
-        style="padding: 1rem; color: #ff6b6b; text-align: center; margin-bottom: 2rem; border-color: rgba(255, 99, 99, 0.2);">
+    <div class="alert alert-error" style="margin-bottom: 2rem;">
         ⚠️ {{ error }}
     </div>
     {% endif %}
@@ -102,13 +283,15 @@
     <!-- Recommendations Display -->
     {% if recommendations %}
     <section id="results" style="margin-bottom: 4rem;">
-        <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">Recommended
-            for You</h2>
+        <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;"
+            data-animate="fadeInLeft">
+            🎬 Recommended for You
+        </h2>
         <div class="movie-grid">
             {% for movie in recommendations %}
             <div class="movie-card" onclick="window.location.href='/movie/{{ movie.title|urlencode }}'">
                 <img src="{{ movie.poster_path if movie.poster_path else 'https://via.placeholder.com/200x300?text=No+Image' }}"
-                    alt="{{ movie.title }}" class="movie-poster">
+                    alt="{{ movie.title }}" class="movie-poster" loading="lazy">
                 <div class="movie-info">
                     <h3 class="movie-title">{{ movie.title }}</h3>
                     <div class="movie-meta">
@@ -125,12 +308,14 @@
     <!-- Popular Movies Fallback -->
     {% if not recommendations and not selected_movie %}
     <section id="popular">
-        <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">Trending Now
+        <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;"
+            data-animate="fadeInLeft">
+            🔥 Trending Now
         </h2>
         <div class="movie-grid">
             {% for movie in popular_movies %}
             <div class="movie-card" onclick="window.location.href='/movie/{{ movie.title|urlencode }}'">
-                <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster">
+                <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster" loading="lazy">
                 <div class="movie-info">
                     <h3 class="movie-title">{{ movie.title }}</h3>
                     <div class="movie-meta">
@@ -156,25 +341,27 @@
     const hiddenInput = document.getElementById('selected-movies-input');
 
     // Pre-load from server if available
-    const serverSelection = JSON.parse('{{ selected_movie | tojson | safe | replace("\'", "\\\'") }}');
+    const serverSelection = JSON.parse('{{ selected_movie | tojson | safe | replace("\'", "\\'") }}');
     if (serverSelection) {
         if (Array.isArray(serverSelection)) {
             selectedMovies = serverSelection;
         } else {
-            selectedMovies = [serverSelection]; // Legacy support if logic passes string
+            selectedMovies = [serverSelection];
         }
-        // Filter out nulls/empties
         selectedMovies = selectedMovies.filter(m => m);
         renderChips();
     }
 
     function addMovie() {
         const val = movieInput.value.trim();
-        if (!val) return;
+        if (!val) {
+            movieInput.classList.add('animate-shake');
+            setTimeout(() => movieInput.classList.remove('animate-shake'), 500);
+            return;
+        }
 
-        // Limit to 5
         if (selectedMovies.length >= 5) {
-            alert("You can select up to 5 movies.");
+            toast.warning('You can select up to 5 movies.');
             return;
         }
 
@@ -182,31 +369,37 @@
             selectedMovies.push(val);
             renderChips();
             movieInput.value = '';
+            toast.success(`Added "${val}"`);
+        } else {
+            toast.info('Movie already added');
         }
     }
 
     function removeMovie(index) {
+        const removed = selectedMovies[index];
         selectedMovies.splice(index, 1);
         renderChips();
+        toast.info(`Removed "${removed}"`);
     }
 
     function renderChips() {
         container.innerHTML = '';
+
         if (selectedMovies.length === 0) {
             container.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.9rem;">No movies selected yet.</span>';
+            return;
         }
 
         selectedMovies.forEach((movie, index) => {
             const chip = document.createElement('div');
             chip.className = 'chip';
-            // Styling for chip is inline here or should be in CSS. Let's rely on CSS mostly but add inline for now to ensure it works
-            chip.style.cssText = "background: #333; padding: 0.5rem 1rem; border-radius: 20px; display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.25rem; border: 1px solid var(--glass-border);";
             chip.innerHTML = `
                 <span>${movie}</span>
-                <span class="close-btn" onclick="removeMovie(${index})" style="cursor: pointer; color: #ff6b6b; font-weight: bold;">&times;</span>
+                <span class="close-btn" onclick="removeMovie(${index})">&times;</span>
             `;
             container.appendChild(chip);
         });
+
         updateHiddenInput();
     }
 
@@ -216,19 +409,30 @@
 
     function validateForm() {
         if (selectedMovies.length === 0) {
-            alert("Please add at least one movie.");
+            toast.error('Please add at least one movie.');
             return false;
         }
-        updateHiddenInput(); // Ensure it's synced
+        updateHiddenInput();
+
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner spinner-sm"></div> <span>Finding movies...</span>';
+
         return true;
     }
 
-    // Handle Enter key in movie input to add instead of submit
+    // Handle Enter key in movie input
     movieInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
             event.preventDefault();
             addMovie();
         }
+    });
+
+    // Auto-focus input on page load
+    window.addEventListener('load', () => {
+        movieInput.focus();
     });
 </script>
 {% endblock %}
