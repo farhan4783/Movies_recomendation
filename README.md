@@ -299,7 +299,7 @@ For support, email us or open an issue on GitHub.
 ---
 
 
-![Movie Maverick](image-1png)
+![Movie Maverick](image-1.png)
 
 ![Movie Maverick](image-2.png)
 
