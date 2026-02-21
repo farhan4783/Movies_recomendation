@@ -2,35 +2,354 @@
 
 {% block title %}My Watchlist - Movie Maverick{% endblock %}
 
+{% block head %}
+<style>
+    .watchlist-header {
+        margin-top: 6rem;
+        margin-bottom: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .watchlist-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.6) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+    }
+
+    [data-theme="light"] .watchlist-title {
+        background: linear-gradient(135deg, #1a1a1a, #555);
+        -webkit-background-clip: text;
+        background-clip: text;
+    }
+
+    .watchlist-count-badge {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50px;
+        padding: 0.3rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .wl-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 4rem;
+    }
+
+    @media (min-width: 768px) {
+        .wl-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        }
+    }
+
+    .wl-card {
+        background: rgba(30, 30, 30, 0.5);
+        border: 1px solid transparent;
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        animation: cardSlideIn 0.4s ease backwards;
+    }
+
+    .wl-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        border-color: rgba(229, 9, 20, 0.4);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(229, 9, 20, 0.2);
+    }
+
+    @keyframes cardSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .wl-poster-wrap {
+        position: relative;
+        aspect-ratio: 2/3;
+        overflow: hidden;
+    }
+
+    .wl-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+
+    .wl-card:hover .wl-poster {
+        transform: scale(1.06);
+    }
+
+    .wl-hover-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 60%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        display: flex;
+        align-items: flex-end;
+        padding: 1rem;
+        gap: 0.5rem;
+    }
+
+    .wl-card:hover .wl-hover-overlay {
+        opacity: 1;
+    }
+
+    .wl-action-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        border-radius: 8px;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+    }
+
+    .wl-action-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .wl-remove-btn:hover {
+        background: rgba(229, 9, 20, 0.5);
+        border-color: rgba(229, 9, 20, 0.7);
+    }
+
+    .wl-info {
+        padding: 0.75rem;
+    }
+
+    .wl-movie-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 0 0 0.3rem;
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .wl-date {
+        font-size: 0.72rem;
+        color: var(--text-tertiary);
+    }
+
+    /* No-poster placeholder */
+    .wl-no-poster {
+        width: 100%;
+        aspect-ratio: 2/3;
+        background: linear-gradient(135deg, rgba(229, 9, 20, 0.1), rgba(50, 50, 50, 0.5));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+    }
+
+    /* Empty State */
+    .wl-empty {
+        text-align: center;
+        padding: 6rem 2rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    .wl-empty-icon {
+        font-size: 5rem;
+        margin-bottom: 1.5rem;
+        animation: bounce 2s ease-in-out infinite;
+        display: block;
+    }
+
+    @keyframes bounce {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-12px);
+        }
+    }
+
+    .wl-empty h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .wl-empty p {
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        font-size: 1.05rem;
+    }
+
+    .wl-empty-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.85rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.25s;
+        text-decoration: none;
+    }
+
+    .wl-empty-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
-    <header>
-        <h1 class="hero-title">My Watchlist</h1>
-        <p class="subtitle">Your curated list of movies to watch.</p>
-    </header>
+    <div class="watchlist-header">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <h1 class="watchlist-title">My Watchlist</h1>
+            {% if movies %}
+            <span class="watchlist-count-badge">
+                🎬 {{ movies|length }} movie{{ 's' if movies|length != 1 else '' }}
+            </span>
+            {% endif %}
+        </div>
+        {% if movies %}
+        <a href="/explore" class="wl-action-btn"
+            style="background: rgba(229,9,20,0.15); border-color: rgba(229,9,20,0.3); color: var(--primary-color); padding: 0.5rem 1.25rem; border-radius: 10px; font-size: 0.9rem; font-weight: 600;">
+            + Add More
+        </a>
+        {% endif %}
+    </div>
 
-    {% if movies %}
-    <div class="movie-grid">
+    {% if not movies %}
+    <div class="wl-empty">
+        <span class="wl-empty-icon">🎥</span>
+        <h2>Your watchlist is empty</h2>
+        <p>Start exploring movies and add your favourites to watch later.</p>
+        <a href="/explore" class="wl-empty-cta">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            Explore Movies
+        </a>
+    </div>
+
+    {% else %}
+    <div class="wl-grid" id="watchlist-grid">
         {% for item in movies %}
-        <div class="movie-card" onclick="window.location.href='/movie/{{ item.movie_title|urlencode }}'">
-            <img src="{{ item.poster_path or 'https://via.placeholder.com/200x300' }}" alt="{{ item.movie_title }}"
-                class="movie-poster">
-            <div class="movie-info">
-                <h3 class="movie-title">{{ item.movie_title }}</h3>
-                <!-- Add remove button or more info here if needed -->
+        <div class="wl-card" id="wl-card-{{ item.id }}" style="animation-delay: {{ loop.index0 * 0.05 }}s">
+            <div class="wl-poster-wrap" onclick="window.location.href='/movie/{{ item.movie_title|urlencode }}'">
+                {% if item.poster_path %}
+                <img src="{{ item.poster_path }}" alt="{{ item.movie_title }}" class="wl-poster" loading="lazy">
+                {% else %}
+                <div class="wl-no-poster">🎬</div>
+                {% endif %}
+
+                <div class="wl-hover-overlay">
+                    <button class="wl-action-btn"
+                        onclick="event.stopPropagation(); window.location.href='/movie/{{ item.movie_title|urlencode }}'">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <polygon points="5,3 19,12 5,21"></polygon>
+                        </svg> View
+                    </button>
+                    <button class="wl-action-btn wl-remove-btn"
+                        onclick="event.stopPropagation(); removeFromWatchlist('{{ item.movie_title }}', {{ item.id }})">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <polyline points="3,6 5,6 21,6"></polyline>
+                            <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2">
+                            </path>
+                        </svg> Remove
+                    </button>
+                </div>
+            </div>
+
+            <div class="wl-info">
+                <p class="wl-movie-title">{{ item.movie_title }}</p>
+                <div class="wl-date">
+                    {% if item.added_at %}
+                    Added {{ item.added_at.strftime('%b %d, %Y') }}
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
-    {% else %}
-    <div class="empty-state glass-panel"
-        style="text-align: center; padding: 4rem; max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.05);">
-        <div style="font-size: 4rem; margin-bottom: 1rem;">😢</div>
-        <h2 style="margin-bottom: 1rem;">Your watchlist is empty</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 2rem;">It looks like you haven't added any movies yet. Go
-            explore and find something amazing!</p>
-        <a href="/" class="primary-btn">Browse Movies</a>
-    </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function removeFromWatchlist(title, id) {
+        try {
+            const res = await fetch('/api/watchlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title })
+            });
+            const data = await res.json();
+
+            if (data.success && data.action === 'removed') {
+                const card = document.getElementById('wl-card-' + id);
+                if (card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        card.remove();
+                        const grid = document.getElementById('watchlist-grid');
+                        const remaining = grid ? grid.querySelectorAll('.wl-card').length : 0;
+                        if (remaining === 0) location.reload();
+                    }, 300);
+                }
+                if (typeof toast !== 'undefined') toast.info(`"${title}" removed from watchlist`);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+</script>
 {% endblock %}

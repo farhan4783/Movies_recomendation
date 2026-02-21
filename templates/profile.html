@@ -2,109 +2,430 @@
 
 {% block title %}My Profile - Movie Maverick{% endblock %}
 
+{% block head %}
+<style>
+    .profile-page {
+        padding-top: 6rem;
+        padding-bottom: 4rem;
+    }
+
+    .profile-hero {
+        background: linear-gradient(135deg, rgba(229, 9, 20, 0.08) 0%, rgba(118, 75, 162, 0.06) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 24px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(12px);
+    }
+
+    .profile-top {
+        display: flex;
+        gap: 2.5rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    /* Avatar */
+    .avatar-wrap {
+        position: relative;
+        flex-shrink: 0;
+        text-align: center;
+    }
+
+    .avatar-img {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        border: 4px solid var(--primary-color);
+        box-shadow: 0 0 0 8px rgba(229, 9, 20, 0.12), 0 10px 40px rgba(0, 0, 0, 0.4);
+        object-fit: cover;
+        background: #222;
+        display: block;
+        margin-bottom: 1rem;
+        transition: transform 0.3s;
+    }
+
+    .avatar-img:hover {
+        transform: scale(1.05);
+    }
+
+    .avatar-regen-btn {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+    .avatar-regen-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: var(--text-primary);
+    }
+
+    /* User Info */
+    .user-info-section {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .profile-username {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.4rem;
+        font-weight: 800;
+        margin: 0 0 0.3rem;
+        letter-spacing: -0.5px;
+    }
+
+    .profile-joined {
+        color: var(--text-tertiary);
+        font-size: 0.9rem;
+        margin-bottom: 1.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Stats Row */
+    .stats-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 1rem 1.5rem;
+        text-align: center;
+        min-width: 90px;
+        transition: all 0.25s;
+    }
+
+    .stat-card:hover {
+        border-color: rgba(229, 9, 20, 0.3);
+        background: rgba(229, 9, 20, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .stat-number {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        line-height: 1;
+        margin-bottom: 0.3rem;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Bio */
+    .bio-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        display: block;
+        font-weight: 500;
+    }
+
+    .bio-textarea {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1.5px solid var(--glass-border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        padding: 0.85rem 1rem;
+        font-family: inherit;
+        font-size: 0.95rem;
+        resize: vertical;
+        transition: border 0.2s, box-shadow 0.2s;
+        min-height: 80px;
+    }
+
+    .bio-textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.12);
+    }
+
+    [data-theme="light"] .bio-textarea {
+        background: rgba(0, 0, 0, 0.04);
+    }
+
+    .save-profile-btn {
+        margin-top: 0.75rem;
+        background: linear-gradient(135deg, #e50914, #c8060f);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.7rem 1.75rem;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s;
+    }
+
+    .save-profile-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+    }
+
+    /* Section Headers */
+    .section-header {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        border-left: 4px solid var(--primary-color);
+        padding-left: 1rem;
+        margin-bottom: 1.75rem;
+    }
+
+    /* Achievements */
+    .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 3rem;
+    }
+
+    .ach-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1.5px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .ach-card.earned {
+        border-color: rgba(229, 9, 20, 0.4);
+        background: rgba(229, 9, 20, 0.06);
+        box-shadow: 0 4px 20px rgba(229, 9, 20, 0.1);
+    }
+
+    .ach-card:not(.earned) {
+        opacity: 0.55;
+    }
+
+    .ach-icon {
+        font-size: 2.8rem;
+        display: block;
+        margin-bottom: 0.6rem;
+    }
+
+    .ach-name {
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        font-size: 1rem;
+    }
+
+    .ach-desc {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        margin-bottom: 1rem;
+    }
+
+    .ach-status-earned {
+        color: var(--primary-color);
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .ach-progress-bar {
+        background: rgba(255, 255, 255, 0.1);
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 0.4rem;
+    }
+
+    .ach-progress-fill {
+        height: 100%;
+        background: var(--primary-color);
+        border-radius: 3px;
+        transition: width 1s ease;
+    }
+
+    .ach-progress-label {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+    }
+
+    /* Reviews */
+    .reviews-section {
+        margin-bottom: 3rem;
+    }
+
+    .review-item {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+        transition: border-color 0.2s;
+    }
+
+    .review-item:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .review-movie-link {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .review-movie-link:hover {
+        color: var(--primary-color);
+    }
+
+    .review-stars {
+        color: #ffd700;
+        font-size: 0.95rem;
+        margin: 0.3rem 0 0.5rem;
+    }
+
+    .review-comment {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
+    .review-date {
+        font-size: 0.82rem;
+        color: var(--text-tertiary);
+        white-space: nowrap;
+    }
+
+    .empty-reviews {
+        color: var(--text-tertiary);
+        font-style: italic;
+        text-align: center;
+        padding: 2rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: 4rem;">
-    <div class="glass-panel" style="padding: 3rem; margin-bottom: 3rem;">
-        <div class="profile-header" style="display: flex; gap: 3rem; align-items: flex-start; flex-wrap: wrap;">
-            <!-- Avatar Section -->
-            <div class="avatar-section" style="text-align: center;">
+<div class="container profile-page">
+
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+        <div class="profile-top">
+            <!-- Avatar -->
+            <div class="avatar-wrap">
                 <img id="avatar-img"
                     src="{{ user.avatar_url or 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username }}"
-                    alt="{{ user.username }}"
-                    style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--primary-color); margin-bottom: 1rem; background: #222;">
-                <button class="secondary-btn" onclick="regenerateAvatar()"
-                    style="font-size: 0.8rem; padding: 0.5rem 1rem;">
-                    🎲 New Avatar
-                </button>
+                    alt="{{ user.username }}" class="avatar-img">
+                <button class="avatar-regen-btn" onclick="regenerateAvatar()">🎲 New Avatar</button>
             </div>
 
-            <!-- User Info -->
-            <div class="user-info" style="flex: 1;">
-                <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ user.username }}</h1>
-                <p style="color: #888; margin-bottom: 1.5rem;">Member since {{ user.date_joined if user.date_joined else
-                    '2024' }}</p>
+            <!-- Info -->
+            <div class="user-info-section">
+                <h1 class="profile-username">{{ user.username }}</h1>
+                <p class="profile-joined">
+                    📅 Member since {{ user.created_at.strftime('%B %Y') if user.created_at else '2024' }}
+                    {% if user.last_login %}· Last seen {{ user.last_login.strftime('%b %d') }}{% endif %}
+                </p>
 
-                <div class="stats-grid" style="display: flex; gap: 2rem; margin-bottom: 2rem;">
-                    <div class="stat-item"
-                        style="text-align: center; background: rgba(255,255,255,0.05); padding: 1rem 2rem; border-radius: 12px;">
-                        <h3 style="font-size: 2rem; color: var(--primary-color); margin-bottom: 0;">{{ reviews|length }}
-                        </h3>
-                        <p style="color: #aaa; margin: 0;">Reviews</p>
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ reviews|length }}</div>
+                        <div class="stat-label">Reviews</div>
                     </div>
-                    <div class="stat-item"
-                        style="text-align: center; background: rgba(255,255,255,0.05); padding: 1rem 2rem; border-radius: 12px;">
-                        <h3 style="font-size: 2rem; color: var(--primary-color); margin-bottom: 0;">{{ watchlist_count
-                            }}</h3>
-                        <p style="color: #aaa; margin: 0;">Watchlist</p>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ watchlist_count }}</div>
+                        <div class="stat-label">Watchlist</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ user.followers.count() if user.followers else 0 }}</div>
+                        <div class="stat-label">Followers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ user.following.count() if user.following else 0 }}</div>
+                        <div class="stat-label">Following</div>
+                    </div>
+                    {% if achievements %}
+                    <div class="stat-card">
+                        <div class="stat-number">{{ achievements | selectattr('is_earned') | list | length }}</div>
+                        <div class="stat-label">Badges</div>
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- Bio Section -->
-                <div class="bio-section">
-                    <label style="color: var(--text-secondary); margin-bottom: 0.5rem; display: block;">About Me</label>
-                    <textarea id="bio-input" class="glass-input" rows="3"
-                        style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; color: white; padding: 1rem;"
-                        placeholder="Tell the world about your movie taste...">{{ user.bio or '' }}</textarea>
-                    <button class="primary-btn" onclick="saveProfile()" style="margin-top: 1rem;">Save Changes</button>
-                </div>
+                <!-- Bio -->
+                <label class="bio-label">About Me</label>
+                <textarea id="bio-input" class="bio-textarea" rows="3"
+                    placeholder="Tell the world about your movie taste...">{{ user.bio or '' }}</textarea>
+                <button class="save-profile-btn" onclick="saveProfile()">Save Changes</button>
             </div>
         </div>
     </div>
 
-    <!-- Achievements Section -->
-    <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">🏆 Achievements
-    </h2>
-    <div class="achievements-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 4rem;">
+    <!-- Achievements -->
+    {% if achievements %}
+    <h2 class="section-header">🏆 Achievements</h2>
+    <div class="achievements-grid">
         {% for ach in achievements %}
-        <div class="achievement-card glass-panel"
-            style="padding: 1.5rem; text-align: center; {% if ach.is_earned %}border: 2px solid var(--primary-color);{% else %}opacity: 0.6;{% endif %}">
-            <div class="achievement-icon" style="font-size: 3rem; margin-bottom: 0.5rem;">
-                {{ ach.achievement.icon }}
-            </div>
-            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">{{ ach.achievement.name }}</h3>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">{{
-                ach.achievement.description }}</p>
-
+        <div class="ach-card {{ 'earned' if ach.is_earned else '' }}">
+            <span class="ach-icon">{{ ach.achievement.icon }}</span>
+            <div class="ach-name">{{ ach.achievement.name }}</div>
+            <p class="ach-desc">{{ ach.achievement.description }}</p>
             {% if ach.is_earned %}
-            <div style="color: var(--primary-color); font-weight: bold;">✓ Earned!</div>
+            <div class="ach-status-earned">✓ Earned!</div>
             {% else %}
-            <div class="progress-bar"
-                style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem;">
-                <div
-                    style="background: var(--primary-color); height: 100%; width: {{ ach.progress }}%; transition: width 0.3s ease;">
-                </div>
+            <div class="ach-progress-bar">
+                <div class="ach-progress-fill" style="width: {{ ach.progress }}%;"></div>
             </div>
-            <small style="color: var(--text-secondary);">{{ ach.current }} / {{ ach.required }}</small>
+            <div class="ach-progress-label">{{ ach.current }} / {{ ach.required }}</div>
             {% endif %}
         </div>
         {% endfor %}
     </div>
+    {% endif %}
 
-    <!-- User Reviews Tab -->
-    <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">My Reviews</h2>
-    <div class="reviews-grid" style="display: grid; gap: 1.5rem;">
+    <!-- My Reviews -->
+    <div class="reviews-section">
+        <h2 class="section-header">⭐ My Reviews</h2>
         {% if reviews %}
         {% for review in reviews %}
-        <div class="review-card glass-panel"
-            style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="review-item">
             <div>
-                <h3 style="margin-bottom: 0.5rem;"><a href="/movie/{{ review.movie_title|urlencode }}">{{
-                        review.movie_title }}</a></h3>
-                <div class="rating" style="color: #ffd700; margin-bottom: 0.5rem;">
-                    {% for i in range(review.rating) %}★{% endfor %}
+                <a href="/movie/{{ review.movie_title|urlencode }}" class="review-movie-link">{{ review.movie_title
+                    }}</a>
+                <div class="review-stars">
+                    {% for i in range(review.rating) %}★{% endfor %}{% for i in range(5 - review.rating) %}<span
+                        style="opacity:0.3;">★</span>{% endfor %}
                 </div>
-                <p style="color: #ddd;">"{{ review.comment }}"</p>
+                <p class="review-comment">"{{ review.comment }}"</p>
             </div>
-            <div style="text-align: right; color: #666; font-size: 0.9rem;">
-                {{ review.created_at.strftime('%b %d, %Y') }}
-            </div>
+            <div class="review-date">{{ review.created_at.strftime('%b %d, %Y') if review.created_at else '' }}</div>
         </div>
         {% endfor %}
         {% else %}
-        <p style="color: #888; font-style: italic;">You haven't reviewed any movies yet.</p>
+        <p class="empty-reviews">You haven't reviewed any movies yet. Start exploring!</p>
         {% endif %}
     </div>
+
 </div>
 {% endblock %}
 
@@ -120,37 +441,36 @@
 
     async function saveProfile() {
         const bio = document.getElementById('bio-input').value;
-        const btn = document.querySelector('button[onclick="saveProfile()"]');
-        const originalText = btn.innerText;
-        btn.innerText = "Saving...";
+        const btn = document.querySelector('.save-profile-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<div class="spinner spinner-sm" style="margin:0 auto;"></div>';
         btn.disabled = true;
 
         try {
             const response = await fetch('/api/profile/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    bio: bio,
-                    avatar_url: currentAvatar
-                })
+                body: JSON.stringify({ bio: bio, avatar_url: currentAvatar })
             });
 
             const data = await response.json();
             if (data.success) {
-                btn.innerText = "Saved!";
+                btn.innerHTML = '✓ Saved!';
+                btn.style.background = 'linear-gradient(135deg, #28a745, #1e7e34)';
+                if (typeof toast !== 'undefined') toast.success('Profile updated!');
                 setTimeout(() => {
-                    btn.innerText = originalText;
+                    btn.innerHTML = originalHTML;
+                    btn.style.background = '';
                     btn.disabled = false;
-                }, 2000);
+                }, 2500);
             } else {
-                alert('Error updating profile');
-                btn.innerText = originalText;
+                btn.innerHTML = originalHTML;
                 btn.disabled = false;
+                if (typeof toast !== 'undefined') toast.error('Error updating profile');
             }
         } catch (e) {
             console.error(e);
-            alert('Error updating profile');
-            btn.innerText = originalText;
+            btn.innerHTML = originalHTML;
             btn.disabled = false;
         }
     }

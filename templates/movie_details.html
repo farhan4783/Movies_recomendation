@@ -84,7 +84,8 @@
                         </p>
                     </div>
 
-                    <div class="action-buttons">
+                    <div class="action-buttons"
+                        style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
                         {% if current_user.is_authenticated %}
                         <button id="watchlist-btn" class="primary-btn {{ 'active' if in_watchlist else '' }}"
                             onclick='toggleWatchlist()'
@@ -94,6 +95,23 @@
                         {% else %}
                         <a href="/login?next={{ request.path }}" class="primary-btn">Login to Add to Watchlist</a>
                         {% endif %}
+
+                        <!-- Social Share Buttons -->
+                        <div class="share-btn-group" style="display: flex; gap: 0.5rem;">
+                            <button class="share-btn" id="share-x" onclick="shareOnX()" title="Share on X (Twitter)"
+                                style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 0.55rem 0.9rem; color: white; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; font-family: inherit; display: flex; align-items: center; gap: 0.4rem;">
+                                𝕏 Share
+                            </button>
+                            <button class="share-btn" id="share-wa" onclick="shareOnWhatsApp()"
+                                title="Share on WhatsApp"
+                                style="background: rgba(37,211,102,0.15); border: 1px solid rgba(37,211,102,0.3); border-radius: 10px; padding: 0.55rem 0.9rem; color: #25d366; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; font-family: inherit; display: flex; align-items: center; gap: 0.4rem;">
+                                📱 WhatsApp
+                            </button>
+                            <button class="share-btn" id="share-copy" onclick="copyLink()" title="Copy link"
+                                style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 0.55rem 0.9rem; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-size: 0.85rem; font-family: inherit; display: flex; align-items: center; gap: 0.4rem;">
+                                🔗 Copy
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -341,9 +359,21 @@
 <script>
     const movieData = JSON.parse(document.getElementById('movie-data').textContent);
 
+    // Track this movie in Recently Viewed (localStorage)
+    (function trackRecentlyViewed() {
+        try {
+            const RV_KEY = 'mm_recently_viewed';
+            const RV_MAX = 12;
+            let stored = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
+            stored = stored.filter(i => i.title !== movieData.title);
+            stored.unshift({ title: movieData.title, poster: movieData.poster_path || null });
+            if (stored.length > RV_MAX) stored = stored.slice(0, RV_MAX);
+            localStorage.setItem(RV_KEY, JSON.stringify(stored));
+        } catch (e) { /* silently ignore */ }
+    })();
+
     async function toggleWatchlist() {
         const btn = document.getElementById('watchlist-btn');
-        // Simple optimistic UI update could be done here, but let's wait for server
         btn.disabled = true;
 
         try {
@@ -366,18 +396,45 @@
                     btn.classList.add('active');
                     btn.style.background = '#333';
                     btn.style.border = '1px solid var(--primary-color)';
+                    if (typeof toast !== 'undefined') toast.success('Added to Watchlist!');
                 } else {
                     btn.innerText = 'Add to Watchlist';
                     btn.classList.remove('active');
-                    btn.style.background = ''; // reset to default class style
+                    btn.style.background = '';
                     btn.style.border = '';
+                    if (typeof toast !== 'undefined') toast.info('Removed from Watchlist');
                 }
             } else {
-                alert('Error updating watchlist');
+                if (typeof toast !== 'undefined') toast.error('Error updating watchlist');
             }
         } catch (e) {
             console.error(e);
             btn.disabled = false;
+        }
+    }
+
+    // Share functions
+    function shareOnX() {
+        const title = encodeURIComponent(`Check out "${movieData.title}" on Movie Maverick!`);
+        const url = encodeURIComponent(window.location.href);
+        window.open(`https://twitter.com/intent/tweet?text=${title}&url=${url}`, '_blank');
+    }
+
+    function shareOnWhatsApp() {
+        const text = encodeURIComponent(`Check out "${movieData.title}" on Movie Maverick! ${window.location.href}`);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    async function copyLink() {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            const btn = document.getElementById('share-copy');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '✅ Copied!';
+            btn.style.color = '#4ade80';
+            setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+        } catch (e) {
+            if (typeof toast !== 'undefined') toast.error('Could not copy link');
         }
     }
 
@@ -413,12 +470,12 @@
             if (data.success) {
                 location.reload();
             } else {
-                alert(data.message || 'Error submitting review');
+                if (typeof toast !== 'undefined') toast.error(data.message || 'Error submitting review');
+                else alert(data.message || 'Error submitting review');
                 submitBtn.disabled = false;
             }
         } catch (error) {
             console.error(error);
-            alert('An error occurred');
             submitBtn.disabled = false;
         }
     }

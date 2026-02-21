@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Movie Maverick{% endblock %}
+
+{% block head %}
+<style>
+    .error-page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 6rem 2rem 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .error-bg-orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.15;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    .error-orb-1 {
+        width: 400px;
+        height: 400px;
+        background: #e50914;
+        top: -100px;
+        left: -100px;
+    }
+
+    .error-orb-2 {
+        width: 300px;
+        height: 300px;
+        background: #764ba2;
+        bottom: 0;
+        right: -80px;
+    }
+
+    .film-reel {
+        font-size: 7rem;
+        margin-bottom: 1.5rem;
+        animation: reelSpin 4s linear infinite, reelFloat 3s ease-in-out infinite;
+        display: inline-block;
+        filter: drop-shadow(0 0 30px rgba(229, 9, 20, 0.4));
+    }
+
+    @keyframes reelSpin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes reelFloat {
+
+        0%,
+        100% {
+            transform: rotate(0deg) translateY(0);
+        }
+
+        25% {
+            transform: rotate(90deg) translateY(-8px);
+        }
+
+        50% {
+            transform: rotate(180deg) translateY(0);
+        }
+
+        75% {
+            transform: rotate(270deg) translateY(-8px);
+        }
+    }
+
+    .error-code {
+        font-family: 'Outfit', sans-serif;
+        font-size: 8rem;
+        font-weight: 900;
+        line-height: 1;
+        background: linear-gradient(135deg, #e50914, #ff4b1f, #e50914);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% 200%;
+        animation: gradientMove 3s ease infinite;
+        margin-bottom: 0;
+        letter-spacing: -4px;
+    }
+
+    @keyframes gradientMove {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .error-tape {
+        width: 100%;
+        max-width: 400px;
+        height: 40px;
+        background: repeating-linear-gradient(90deg,
+                rgba(229, 9, 20, 0.4) 0px,
+                rgba(229, 9, 20, 0.4) 20px,
+                transparent 20px,
+                transparent 40px);
+        border-radius: 4px;
+        margin: 0.5rem 0 1.5rem;
+        opacity: 0.5;
+    }
+
+    .error-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 1rem;
+    }
+
+    .error-message {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        max-width: 500px;
+        line-height: 1.6;
+        margin-bottom: 3rem;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .error-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.85rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.25s;
+    }
+
+    .error-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
+    }
+
+    .error-btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
+        padding: 0.85rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        text-decoration: none;
+        border: 1px solid var(--glass-border);
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.25s;
+    }
+
+    .error-btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .error-suggestions {
+        margin-top: 4rem;
+        color: var(--text-tertiary);
+        font-size: 0.85rem;
+    }
+
+    .error-suggestions ul {
+        list-style: none;
+        padding: 0;
+        margin: 0.75rem 0 0;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .error-suggestions a {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+
+    .error-suggestions a:hover {
+        opacity: 0.75;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-bg-orb error-orb-1"></div>
+    <div class="error-bg-orb error-orb-2"></div>
+
+    <div class="film-reel">🎞️</div>
+    <div class="error-code">404</div>
+    <div class="error-tape"></div>
+
+    <h1 class="error-title">Scene Not Found</h1>
+    <p class="error-message">
+        Looks like this reel got lost in the projection booth. The page you're looking for has wandered off the film
+        set.
+    </p>
+
+    <div class="error-actions">
+        <a href="/" class="error-btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9,22 9,12 15,12 15,22"></polyline>
+            </svg>
+            Go Home
+        </a>
+        <button class="error-btn-secondary" onclick="history.back()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12,19 5,12 12,5"></polyline>
+            </svg>
+            Go Back
+        </button>
+    </div>
+
+    <div class="error-suggestions">
+        Or try one of these:
+        <ul>
+            <li><a href="/explore">Explore Movies</a></li>
+            <li><a href="/chat">AI Chat</a></li>
+            <li><a href="/modyverse">Modyverse</a></li>
+            {% if user.is_authenticated %}
+            <li><a href="/watchlist">My Watchlist</a></li>
+            {% else %}
+            <li><a href="/login">Login</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

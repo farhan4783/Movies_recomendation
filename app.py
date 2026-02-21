@@ -3,20 +3,22 @@ import pandas as pd
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import os
+from datetime import datetime
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation
-from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details
+from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details, search_movies, fetch_trending_movies
 from model import db
-from model.models import User, Watchlist, Review, MovieList, ListItem
+from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory
 from utils.achievements import initialize_achievements, check_and_award_achievements, get_achievement_progress
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super_secret_key_change_this")
 
 # Database Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] = False
 
 db.init_app(app)
 
@@ -201,6 +203,8 @@ def login():
         user = User.query.filter_by(username=username).first()
         
         if user and check_password_hash(user.password, password):
+            user.last_login = datetime.utcnow()
+            db.session.commit()
             login_user(user)
             return redirect(url_for('explore_page'))
         else:
@@ -213,13 +217,18 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        email = request.form.get('email', '').strip() or None
         
         user = User.query.filter_by(username=username).first()
-        
         if user:
-             return render_template('register.html', error='Username already exists')
+            return render_template('register.html', error='Username already exists')
         
-        new_user = User(username=username, password=generate_password_hash(password, method='scrypt'))
+        if email:
+            existing_email = User.query.filter_by(email=email).first()
+            if existing_email:
+                return render_template('register.html', error='Email already registered')
+        
+        new_user = User(username=username, password=generate_password_hash(password, method='scrypt'), email=email)
         db.session.add(new_user)
         db.session.commit()
         
@@ -300,6 +309,17 @@ def movie_details(title):
         exists = Watchlist.query.filter_by(user_id=current_user.id, movie_title=details['title']).first()
         if exists:
             in_watchlist = True
+        # Track viewing history
+        try:
+            history = ViewingHistory(
+                user_id=current_user.id,
+                movie_title=details['title'],
+                tmdb_id=details.get('id')
+            )
+            db.session.add(history)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
             
     reviews = Review.query.filter_by(movie_title=details['title']).order_by(Review.created_at.desc()).all()
             
@@ -460,6 +480,44 @@ def delete_list(list_id):
     db.session.commit()
     
     return jsonify({"success": True})
+
+
+@app.route("/api/search")
+def api_search():
+    """Live TMDB movie search for the search modal"""
+    query = request.args.get("q", "").strip()
+    if not query or len(query) < 2:
+        return jsonify({"results": []})
+    results = search_movies(query)
+    return jsonify({"results": results})
+
+
+@app.route("/api/trending")
+def api_trending():
+    """Trending movies from TMDB"""
+    time_window = request.args.get("window", "week")
+    movies = fetch_trending_movies(time_window)
+    return jsonify({"results": movies})
+
+
+@app.route("/api/watchlist", methods=["GET"])
+@login_required
+def get_watchlist_json():
+    """Return the current user's watchlist as JSON"""
+    items = Watchlist.query.filter_by(user_id=current_user.id).order_by(Watchlist.added_at.desc()).all()
+    return jsonify({"watchlist": [
+        {
+            "title": item.movie_title,
+            "poster_path": item.poster_path,
+            "tmdb_id": item.tmdb_id,
+            "added_at": item.added_at.isoformat() if item.added_at else None
+        } for item in items
+    ]})
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html", user=current_user), 404
 
 
 if __name__ == "__main__":

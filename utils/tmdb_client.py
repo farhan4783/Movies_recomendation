@@ -187,3 +187,66 @@ def fetch_full_movie_details(title):
     except Exception as e:
         print(f"Error fetching full details for {title}: {e}")
         return None
+
+
+def search_movies(query, page=1):
+    """
+    Searches TMDB for movies matching a query string.
+    Returns a list of results for live search / autocomplete.
+    """
+    if not TMDB_API_KEY or not query:
+        return []
+
+    try:
+        url = f"{BASE_URL}/search/movie"
+        params = {
+            "api_key": TMDB_API_KEY,
+            "query": query,
+            "page": page,
+            "language": "en-US"
+        }
+        response = requests.get(url, params=params, timeout=5)
+        data = response.json()
+
+        results = []
+        for item in data.get("results", [])[:8]:
+            results.append({
+                "id": item.get("id"),
+                "title": item.get("title"),
+                "poster_path": f"{IMAGE_BASE_URL}{item.get('poster_path')}" if item.get("poster_path") else None,
+                "release_date": item.get("release_date", ""),
+                "vote_average": round(item.get("vote_average", 0), 1)
+            })
+        return results
+    except Exception as e:
+        print(f"Error searching movies for '{query}': {e}")
+        return []
+
+
+def fetch_trending_movies(time_window="week"):
+    """
+    Fetches trending movies from TMDB.
+    time_window: 'day' or 'week'
+    """
+    if not TMDB_API_KEY:
+        return []
+
+    try:
+        url = f"{BASE_URL}/trending/movie/{time_window}"
+        params = {"api_key": TMDB_API_KEY, "language": "en-US"}
+        response = requests.get(url, params=params, timeout=5)
+        data = response.json()
+
+        movies = []
+        for item in data.get("results", [])[:12]:
+            movies.append({
+                "id": item.get("id"),
+                "title": item.get("title"),
+                "poster_path": f"{IMAGE_BASE_URL}{item.get('poster_path')}" if item.get("poster_path") else None,
+                "vote_average": round(item.get("vote_average", 0), 1),
+                "release_date": item.get("release_date", "")
+            })
+        return movies
+    except Exception as e:
+        print(f"Error fetching trending movies: {e}")
+        return []
