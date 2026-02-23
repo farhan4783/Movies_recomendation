@@ -321,6 +321,81 @@
         text-align: center;
         padding: 2rem;
     }
+
+    /* Personality Card */
+    .personality-card {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(229, 9, 20, 0.05) 100%);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        animation: glowPulse 4s infinite alternate;
+    }
+
+    @keyframes glowPulse {
+        from {
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.05);
+        }
+
+        to {
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.15);
+        }
+    }
+
+    .personality-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #ffd700;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .personality-desc {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+
+    .personality-traits {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .trait-tag {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .discover-personality-btn {
+        background: rgba(255, 215, 0, 0.15);
+        color: #ffd700;
+        border: 1px solid #ffd700;
+        border-radius: 10px;
+        padding: 0.6rem 1.2rem;
+        font-family: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 1rem;
+    }
+
+    .discover-personality-btn:hover {
+        background: #ffd700;
+        color: black;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
 </style>
 {% endblock %}
 
@@ -370,6 +445,20 @@
                         <div class="stat-label">Badges</div>
                     </div>
                     {% endif %}
+                </div>
+
+                <!-- AI Movie Personality -->
+                <div id="personality-container" class="personality-card">
+                    <div id="personality-loading" style="display:none; text-align:center; padding: 1rem;">
+                        <div class="spinner spinner-sm" style="margin: 0 auto 0.5rem;"></div>
+                        <p style="font-size:0.9rem; color:var(--text-secondary);">Analyzing your cinematic soul...</p>
+                    </div>
+                    <div id="personality-content">
+                        <h3 class="personality-title">✨ Discover Your Movie Personality</h3>
+                        <p class="personality-desc">Let our AI analyze your watch history and reviews to reveal your
+                            unique cinematic profile.</p>
+                        <button class="discover-personality-btn" onclick="fetchPersonality()">Analyze My Taste</button>
+                    </div>
                 </div>
 
                 <!-- Bio -->
@@ -472,6 +561,39 @@
             console.error(e);
             btn.innerHTML = originalHTML;
             btn.disabled = false;
+        }
+    }
+
+    async function fetchPersonality() {
+        const container = document.getElementById('personality-content');
+        const loader = document.getElementById('personality-loading');
+
+        container.style.display = 'none';
+        loader.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/personality');
+            const data = await response.json();
+
+            loader.style.display = 'none';
+            container.style.display = 'block';
+
+            container.innerHTML = `
+                <h3 class="personality-title">✨ ${data.title}</h3>
+                <p class="personality-desc">${data.description}</p>
+                <div class="personality-traits">
+                    ${data.traits.map(t => `<span class="trait-tag">${t}</span>`).join('')}
+                </div>
+            `;
+        } catch (e) {
+            console.error(e);
+            loader.style.display = 'none';
+            container.style.display = 'block';
+            container.innerHTML = `
+                <h3 class="personality-title">❌ Analysis Failed</h3>
+                <p class="personality-desc">We couldn't connect to our cinematic oracle. Please try again later.</p>
+                <button class="discover-personality-btn" onclick="fetchPersonality()">Try Again</button>
+            `;
         }
     }
 </script>

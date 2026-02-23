@@ -69,6 +69,21 @@
                             backdrop-filter: blur(5px);
                         ">{{ genre }}</span>
                         {% endfor %}
+
+                        {% if movie.watch_providers and movie.watch_providers.flatrate %}
+                        <span class="streaming-now-badge" style="
+                            background: rgba(74, 222, 128, 0.2);
+                            color: #4ade80;
+                            padding: 0.3rem 0.8rem;
+                            border-radius: 8px;
+                            border: 1px solid rgba(74, 222, 128, 0.4);
+                            font-weight: bold;
+                            font-size: 0.9rem;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.4rem;
+                        ">● Streaming Now</span>
+                        {% endif %}
                     </div>
 
                     {% if movie.tagline %}
@@ -155,100 +170,126 @@
         </section>
         {% endif %}
 
-        <!-- Where to Watch Section -->
         {% if movie.watch_providers and (movie.watch_providers.flatrate or movie.watch_providers.rent or
         movie.watch_providers.buy) %}
         <section class="watch-providers-section" style="margin-bottom: 4rem;">
             <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">Where to
                 Watch</h2>
 
-            <div class="glass-panel" style="padding: 2rem;">
+            <div class="glass-panel"
+                style="padding: 2.5rem; border: 1px solid rgba(255, 215, 0, 0.1); background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,215,0,0.02) 100%);">
                 {% if movie.watch_providers.flatrate %}
-                <div class="provider-category" style="margin-bottom: 2rem;">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-secondary);">Stream</h3>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <div class="provider-category" style="margin-bottom: 2.5rem;">
+                    <h3
+                        style="font-size: 1.2rem; margin-bottom: 1.25rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.6rem;">
+                        <span style="color: #4ade80;">▶</span> Subscription
+                    </h3>
+                    <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center;">
                         {% for provider in movie.watch_providers.flatrate %}
                         <div class="provider-item" style="
                             background: rgba(255, 255, 255, 0.05);
-                            border: 1px solid var(--glass-border);
-                            border-radius: 12px;
-                            padding: 0.8rem 1.2rem;
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            border-radius: 16px;
+                            padding: 1rem 1.5rem;
                             display: flex;
                             align-items: center;
-                            gap: 0.8rem;
-                            transition: all 0.3s ease;
-                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(-2px)'"
-                            onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)'">
-                            {% if provider.logo %}
+                            gap: 1rem;
+                            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'; this.style.transform='translateY(-5px) scale(1.05)'; this.style.borderColor='rgba(255,215,0,0.3)'"
+                            onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0) scale(1)'; this.style.borderColor='rgba(255,255,255,0.1)'">
+                            {% if provider.logo_path %}
+                            <img src="https://image.tmdb.org/t/p/original{{ provider.logo_path }}"
+                                alt="{{ provider.provider_name }}"
+                                style="width: 44px; height: 44px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                            {% elif provider.logo %}
                             <img src="{{ provider.logo }}" alt="{{ provider.name }}"
-                                style="width: 40px; height: 40px; border-radius: 8px;">
+                                style="width: 44px; height: 44px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
                             {% endif %}
-                            <span style="font-weight: 500;">{{ provider.name }}</span>
+                            <span style="font-weight: 600; font-size: 1.05rem;">{{ provider.provider_name or
+                                provider.name }}</span>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
 
-                {% if movie.watch_providers.rent %}
-                <div class="provider-category" style="margin-bottom: 2rem;">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-secondary);">Rent</h3>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                        {% for provider in movie.watch_providers.rent %}
-                        <div class="provider-item" style="
-                            background: rgba(255, 255, 255, 0.05);
-                            border: 1px solid var(--glass-border);
-                            border-radius: 12px;
-                            padding: 0.8rem 1.2rem;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.8rem;
-                            transition: all 0.3s ease;
-                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(-2px)'"
-                            onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)'">
-                            {% if provider.logo %}
-                            <img src="{{ provider.logo }}" alt="{{ provider.name }}"
-                                style="width: 40px; height: 40px; border-radius: 8px;">
-                            {% endif %}
-                            <span style="font-weight: 500;">{{ provider.name }}</span>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2.5rem;">
+                    {% if movie.watch_providers.rent %}
+                    <div class="provider-category">
+                        <h3
+                            style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.6rem;">
+                            <span style="color: #60a5fa;">💰</span> Rent
+                        </h3>
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                            {% for provider in movie.watch_providers.rent %}
+                            <div class="provider-item-small" style="
+                                background: rgba(255, 255, 255, 0.04);
+                                border: 1px solid rgba(255, 255, 255, 0.08);
+                                border-radius: 12px;
+                                padding: 0.6rem 1rem;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.7rem;
+                                transition: all 0.2s;
+                            " onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'"
+                                onmouseout="this.style.background='rgba(255, 255, 255, 0.04)'">
+                                {% if provider.logo_path %}
+                                <img src="https://image.tmdb.org/t/p/original{{ provider.logo_path }}"
+                                    alt="{{ provider.provider_name }}"
+                                    style="width: 28px; height: 28px; border-radius: 6px;">
+                                {% elif provider.logo %}
+                                <img src="{{ provider.logo }}" alt="{{ provider.name }}"
+                                    style="width: 28px; height: 28px; border-radius: 6px;">
+                                {% endif %}
+                                <span style="font-size: 0.9rem;">{{ provider.provider_name or provider.name }}</span>
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
-                {% endif %}
+                    {% endif %}
 
-                {% if movie.watch_providers.buy %}
-                <div class="provider-category">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-secondary);">Buy</h3>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                        {% for provider in movie.watch_providers.buy %}
-                        <div class="provider-item" style="
-                            background: rgba(255, 255, 255, 0.05);
-                            border: 1px solid var(--glass-border);
-                            border-radius: 12px;
-                            padding: 0.8rem 1.2rem;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.8rem;
-                            transition: all 0.3s ease;
-                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(-2px)'"
-                            onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)'">
-                            {% if provider.logo %}
-                            <img src="{{ provider.logo }}" alt="{{ provider.name }}"
-                                style="width: 40px; height: 40px; border-radius: 8px;">
-                            {% endif %}
-                            <span style="font-weight: 500;">{{ provider.name }}</span>
+                    {% if movie.watch_providers.buy %}
+                    <div class="provider-category">
+                        <h3
+                            style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.6rem;">
+                            <span style="color: #f472b6;">🛒</span> Buy
+                        </h3>
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                            {% for provider in movie.watch_providers.buy %}
+                            <div class="provider-item-small" style="
+                                background: rgba(255, 255, 255, 0.04);
+                                border: 1px solid rgba(255, 255, 255, 0.08);
+                                border-radius: 12px;
+                                padding: 0.6rem 1rem;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.7rem;
+                                transition: all 0.2s;
+                            " onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'"
+                                onmouseout="this.style.background='rgba(255, 255, 255, 0.04)'">
+                                {% if provider.logo_path %}
+                                <img src="https://image.tmdb.org/t/p/original{{ provider.logo_path }}"
+                                    alt="{{ provider.provider_name }}"
+                                    style="width: 28px; height: 28px; border-radius: 6px;">
+                                {% elif provider.logo %}
+                                <img src="{{ provider.logo }}" alt="{{ provider.name }}"
+                                    style="width: 28px; height: 28px; border-radius: 6px;">
+                                {% endif %}
+                                <span style="font-size: 0.9rem;">{{ provider.provider_name or provider.name }}</span>
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
-                {% endif %}
 
                 {% if movie.watch_providers.link %}
-                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                <div
+                    style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border); text-align: right;">
                     <a href="{{ movie.watch_providers.link }}" target="_blank" rel="noopener noreferrer"
-                        style="color: var(--primary-color); font-size: 0.9rem; text-decoration: underline;">
-                        View all watch options on TMDB →
+                        style="color: #ffd700; font-size: 0.9rem; text-decoration: none; font-weight: 700; background: rgba(255,215,0,0.1); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255,215,0,0.2); transition: all 0.2s;">
+                        Detailed Watch Options on TMDB ↗
                     </a>
                 </div>
                 {% endif %}

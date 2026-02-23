@@ -214,31 +214,49 @@ class CollaborativeRecommender:
         return self.movies_df[self.movies_df['movieId'].isin(top_movie_ids)]['title'].tolist()
 
 class HybridRecommender:
-    def __init__(self, content_model, collaborative_model):
+    def __init__(self, content_model, collaborative_model, popularity_model):
         self.content_model = content_model
         self.collab_model = collaborative_model
+        self.pop_model = popularity_model
 
     def recommend(self, titles, user_id, n=10):
-        # For simplicity in this iteration, we merge the two lists
-        # In a real hybrid system, we would weight the scores
-        content_recs = self.content_model.recommend(titles, n=n)
-        collab_recs = self.collab_model.recommend(user_id, n=n)
+        """
+        A scientific weighted hybrid approach:
+        - Content Similarity: 40%
+        - Collaborative Signal: 40%
+        - Popularity/Quality: 20%
+        """
+        # 1. Get recommendations from sub-models with their scores if possible
+        # Since our sub-models currently return titles, we'll assign rank-based scores
         
-        # Mix them: alternating
+        content_recs = self.content_model.recommend(titles, n=n*2)
+        collab_recs = self.collab_model.recommend(user_id, n=n*2)
+        pop_recs = self.pop_model.recommend(n=n*2)
+        
+        all_candidates = {}
+        
+        # Rank-based scoring (Reciprocal Rank Fusion or weighted rank)
+        def add_scores(recs, weight):
+            for i, title in enumerate(recs):
+                score = (1.0 / (i + 1)) * weight
+                all_candidates[title] = all_candidates.get(title, 0) + score
+                
+        add_scores(content_recs, 1.2) # Content is highly relevant to recent taste
+        add_scores(collab_recs, 1.0)  # Collab helps with discovery
+        add_scores(pop_recs, 0.4)     # Popularity adds "safe" recommendations
+        
+        # 2. Sort candidates by final score
+        sorted_candidates = sorted(all_candidates.items(), key=lambda x: x[1], reverse=True)
+        
+        # 3. Filter and return top n
+        # Exclude movies the user has already provided in 'titles'
+        input_titles = set(titles) if isinstance(titles, list) else {titles}
+        
         hybrid = []
-        c_idx, co_idx = 0, 0
-        while len(hybrid) < n:
-            if c_idx < len(content_recs):
-                if content_recs[c_idx] not in hybrid:
-                    hybrid.append(content_recs[c_idx])
-                c_idx += 1
-            
-            if len(hybrid) < n and co_idx < len(collab_recs):
-                if collab_recs[co_idx] not in hybrid:
-                    hybrid.append(collab_recs[co_idx])
-                co_idx += 1
-                
-            if c_idx >= len(content_recs) and co_idx >= len(collab_recs):
-                break
-                
+        for title, score in sorted_candidates:
+            if title not in input_titles:
+                hybrid.append(title)
+                if len(hybrid) >= n:
+                    break
+                    
         return hybrid

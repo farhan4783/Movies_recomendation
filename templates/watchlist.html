@@ -286,6 +286,13 @@
                 <div class="wl-no-poster">🎬</div>
                 {% endif %}
 
+                {% if item.watch_providers and item.watch_providers.flatrate %}
+                <div class="streaming-indicator"
+                    title="Available on: {{ item.watch_providers.flatrate|map(attribute='name')|join(', ') }}">
+                    Streaming
+                </div>
+                {% endif %}
+
                 <div class="wl-hover-overlay">
                     <button class="wl-action-btn"
                         onclick="event.stopPropagation(); window.location.href='/movie/{{ item.movie_title|urlencode }}'">

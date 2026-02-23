@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
-from model.ai_recommender import get_ai_recommendation, get_mood_recommendation
+from model.ai_recommender import get_ai_recommendation, get_mood_recommendation, get_user_personality
 from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details, search_movies, fetch_trending_movies
 from model import db
 from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory
@@ -48,7 +48,7 @@ try:
     pop_model = PopularityRecommender(movies_df, ratings_df)
     content_model = ContentBasedRecommender(movies_df)
     collab_model = CollaborativeRecommender(movies_df, ratings_df)
-    hybrid_model = HybridRecommender(content_model, collab_model)
+    hybrid_model = HybridRecommender(content_model, collab_model, pop_model)
     print("Models Initialized.")
 except Exception as e:
     print(f"Error loading models: {e}")
@@ -282,6 +282,19 @@ def ai_chat():
 def chat_page():
     return render_template("chat.html", user=current_user)
 
+@app.route("/api/personality")
+@login_required
+def api_personality():
+    """Analyze current user's movie personality based on history"""
+    # Get movie titles from viewing history and reviews
+    history = ViewingHistory.query.filter_by(user_id=current_user.id).all()
+    reviews = Review.query.filter_by(user_id=current_user.id).all()
+    
+    movie_titles = list(set([h.movie_title for h in history] + [r.movie_title for r in reviews]))
+    
+    personality = get_user_personality(movie_titles)
+    return jsonify(personality)
+
 @app.route("/modyverse")
 def modyverse_page():
     return render_template("modyverse.html", user=current_user)
@@ -384,6 +397,14 @@ def toggle_watchlist():
 @login_required
 def watchlist_page():
     wl_items = Watchlist.query.filter_by(user_id=current_user.id).all()
+    
+    # Enrich with watch providers
+    for item in wl_items:
+        if item.tmdb_id:
+            item.watch_providers = fetch_watch_providers(item.tmdb_id)
+        else:
+            item.watch_providers = None
+            
     return render_template("watchlist.html", movies=wl_items, user=current_user)
 
 @app.route("/api/achievements")

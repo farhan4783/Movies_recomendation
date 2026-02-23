@@ -27,13 +27,19 @@ def fetch_movie_details(title):
 
         if data.get("results"):
             movie = data["results"][0]
+            movie_id = movie.get("id")
+            
+            # Fetch providers too
+            providers = fetch_watch_providers(movie_id)
+            
             return {
                 "title": movie.get("title"),
                 "poster_path": f"{IMAGE_BASE_URL}{movie.get('poster_path')}" if movie.get("poster_path") else None,
                 "overview": movie.get("overview"),
                 "release_date": movie.get("release_date"),
                 "vote_average": movie.get("vote_average"),
-                "id": movie.get("id")
+                "id": movie_id,
+                "watch_providers": providers
             }
         return None
     except Exception as e:
@@ -59,13 +65,22 @@ def fetch_popular_movies(page=1):
         
         movies = []
         for item in data.get("results", []):
+            movie_id = item.get("id")
+            # We skip providers for popular/trending initially for performance, 
+            # but for this specific request, we'll try to get them if possible 
+            # or just rely on the badge for those that we know have it.
+            # However, the user wants badges on cards.
+            # Let's add them.
+            providers = fetch_watch_providers(movie_id)
+            
             movies.append({
-                "id": item.get("id"),
+                "id": movie_id,
                 "title": item.get("title"),
                 "overview": item.get("overview"),
-                "poster_path": f"{IMAGE_BASE_URL}{item.get('poster_path')}" if item.get("poster_path") else None,
+                "poster_path": f"{IMAGE_BASE_URL}{item.get('poster_path')}" if item.get('poster_path') else None,
                 "vote_average": item.get("vote_average"),
-                "release_date": item.get("release_date")
+                "release_date": item.get("release_date"),
+                "watch_providers": providers
             })
         return movies
     except Exception as e:
@@ -239,12 +254,17 @@ def fetch_trending_movies(time_window="week"):
 
         movies = []
         for item in data.get("results", [])[:12]:
+            movie_id = item.get("id")
+            providers = fetch_watch_providers(movie_id)
+            
             movies.append({
-                "id": item.get("id"),
+                "id": movie_id,
                 "title": item.get("title"),
-                "poster_path": f"{IMAGE_BASE_URL}{item.get('poster_path')}" if item.get("poster_path") else None,
+                "overview": item.get("overview"),
+                "poster_path": f"{IMAGE_BASE_URL}{item.get('poster_path')}" if item.get('poster_path') else None,
                 "vote_average": round(item.get("vote_average", 0), 1),
-                "release_date": item.get("release_date", "")
+                "release_date": item.get("release_date", ""),
+                "watch_providers": providers
             })
         return movies
     except Exception as e:

@@ -87,3 +87,58 @@ def get_mood_recommendation(answers):
         print(f"Gemini API Error: {e}")
         return "<p>Sorry, I couldn't generate recommendations right now.</p>"
 
+
+def get_user_personality(movie_history):
+    """
+    Analyzes a list of movie titles to generate a 'Movie Personality'.
+    movie_history: List of movie titles the user has viewed or reviewed.
+    """
+    if not GEMINI_API_KEY or not GENAI_AVAILABLE:
+        return {
+            "title": "The Mysterious Viewer",
+            "description": "We need more data (and an API key) to reveal your true cinematic soul.",
+            "traits": ["Enigmatic", "Private", "Unpredictable"]
+        }
+
+    if not movie_history:
+        return {
+            "title": "The Blank Canvas",
+            "description": "You haven't watched enough movies for me to analyze your personality yet. Start exploring!",
+            "traits": ["Open-minded", "Newbie", "Curious"]
+        }
+
+    try:
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        movies_str = ", ".join(movie_history[:20]) # Limit to top 20 for prompt size
+        
+        prompt = f"""
+        Analyze the following list of movies watched by a user and determine their "Movie Personality".
+        
+        Movies: {movies_str}
+        
+        Provide the result in the following JSON format:
+        {{
+            "title": "A creative and catchy personality title (e.g., The Sci-Fi Visionary, The Hopeless Romantic Noir)",
+            "description": "A 2-3 sentence fun and insightful description of their cinematic taste.",
+            "traits": ["Trait 1", "Trait 2", "Trait 3"]
+        }}
+        
+        Be creative, witty, and slightly hyperbolic. Ensure the response is ONLY the JSON object.
+        """
+        
+        response = model.generate_content(prompt)
+        import json
+        
+        # Clean response text in case Gemini adds markdown
+        text = response.text.replace("```json", "").replace("```", "").strip()
+        personality = json.loads(text)
+        return personality
+        
+    except Exception as e:
+        print(f"Gemini Personality Error: {e}")
+        return {
+            "title": "The Indie Enthusiast",
+            "description": "You have a diverse taste that defies simple categorization. You're always looking for the next hidden gem.",
+            "traits": ["Diverse", "Eclectic", "Unconventional"]
+        }

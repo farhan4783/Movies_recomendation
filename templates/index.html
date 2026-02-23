@@ -367,6 +367,14 @@
             <div class="movie-card" onclick="window.location.href='/movie/{{ movie.title|urlencode }}'">
                 <img src="{{ movie.poster_path if movie.poster_path else 'https://via.placeholder.com/200x300?text=No+Image' }}"
                     alt="{{ movie.title }}" class="movie-poster" loading="lazy">
+
+                {% if movie.watch_providers and movie.watch_providers.flatrate %}
+                <div class="streaming-indicator"
+                    title="Available on: {{ movie.watch_providers.flatrate|map(attribute='name')|join(', ') }}">
+                    Streaming
+                </div>
+                {% endif %}
+
                 <div class="movie-info">
                     <h3 class="movie-title">{{ movie.title }}</h3>
                     <div class="movie-meta">
@@ -405,6 +413,14 @@
                     {{ loop.index }}
                 </div>
                 <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster" loading="lazy">
+
+                {% if movie.watch_providers and movie.watch_providers.flatrate %}
+                <div class="streaming-indicator"
+                    title="Available on: {{ movie.watch_providers.flatrate|map(attribute='name')|join(', ') }}">
+                    Streaming
+                </div>
+                {% endif %}
+
                 <div class="movie-info">
                     <h3 class="movie-title">{{ movie.title }}</h3>
                     <div class="movie-meta">
@@ -430,7 +446,7 @@
     const hiddenInput = document.getElementById('selected-movies-input');
 
     // Pre-load from server if available
-    const serverSelection = JSON.parse('{{ selected_movie | tojson | safe | replace("\'", "\\'") }}');
+    const serverSelection = {{ (selected_movie or[]) | tojson | safe }};
     if (serverSelection) {
         if (Array.isArray(serverSelection)) {
             selectedMovies = serverSelection;
