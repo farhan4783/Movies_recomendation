@@ -336,15 +336,31 @@
             <div class="reviews-list">
                 {% if reviews %}
                 {% for review in reviews %}
-                <div class="review-card glass-panel" style="padding: 1.5rem; margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <div class="review-card glass-panel" id="review-card-{{ review.id }}"
+                    style="padding: 1.5rem; margin-bottom: 1rem; transition: all 0.2s;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                         <strong>{{ review.user.username }}</strong>
                         <span style="color: #ffd700;">
                             {% for i in range(review.rating) %}★{% endfor %}
                         </span>
                     </div>
-                    <p style="color: #ddd;">{{ review.comment }}</p>
-                    <small style="color: #666;">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                    <p style="color: #ddd; margin-bottom: 0.75rem;">{{ review.comment }}</p>
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                        <small style="color: #666;">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                        {% if current_user.is_authenticated %}
+                        <button class="like-btn {% if current_user.id in review.liked_by_ids %}liked{% endif %}"
+                            id="like-btn-{{ review.id }}" onclick="toggleReviewLike({{ review.id }})"
+                            style="background: none; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 0.3rem 0.8rem; color: var(--text-secondary); cursor: pointer; font-family: inherit; font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem; transition: all 0.2s;">
+                            <span id="like-icon-{{ review.id }}">{% if current_user.id in review.liked_by_ids %}❤️{%
+                                else %}🤍{% endif %}</span>
+                            <span id="like-count-{{ review.id }}">{{ review.get_like_count() }}</span>
+                        </button>
+                        {% else %}
+                        <span style="font-size: 0.82rem; color: #666;">🤍 {{ review.get_like_count() }}</span>
+                        {% endif %}
+                    </div>
                 </div>
                 {% endfor %}
                 {% else %}
@@ -519,6 +535,25 @@
             console.error(error);
             submitBtn.disabled = false;
         }
+    }
+
+    async function toggleReviewLike(reviewId) {
+        try {
+            const res = await fetch(`/api/reviews/${reviewId}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('like-count-' + reviewId).textContent = data.like_count;
+                document.getElementById('like-icon-' + reviewId).textContent = data.liked ? '❤️' : '🤍';
+                const btn = document.getElementById('like-btn-' + reviewId);
+                if (btn) {
+                    btn.style.borderColor = data.liked ? 'rgba(229,9,20,0.5)' : 'rgba(255,255,255,0.15)';
+                    btn.style.color = data.liked ? 'var(--primary-color)' : 'var(--text-secondary)';
+                }
+            }
+        } catch (err) { console.error(err); }
     }
 </script>
 {% endblock %}

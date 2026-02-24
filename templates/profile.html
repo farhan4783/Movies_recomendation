@@ -515,6 +515,25 @@
         {% endif %}
     </div>
 
+    <!-- Live Stats (loaded from API) -->
+    <div style="margin-bottom: 3rem;" id="live-stats-section">
+        <h2 class="section-header">📊 Your Cinema Stats</h2>
+        <div id="live-stats-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
+            <!-- Loading skeletons -->
+            {% for i in range(6) %}
+            <div class="stat-card" style="animation: pulse 1.5s ease-in-out infinite alternate;">
+                <div
+                    style="height: 2rem; background: rgba(255,255,255,0.06); border-radius: 8px; margin-bottom: 0.5rem;">
+                </div>
+                <div
+                    style="height: 0.8rem; background: rgba(255,255,255,0.04); border-radius: 6px; width: 60%; margin: 0 auto;">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
@@ -596,5 +615,35 @@
             `;
         }
     }
+
+    async function loadLiveStats() {
+        const grid = document.getElementById('live-stats-grid');
+        if (!grid) return;
+        try {
+            const res = await fetch('/api/stats');
+            const d = await res.json();
+            const statItems = [
+                { label: 'Movies Viewed', value: d.movies_viewed, icon: '🎬' },
+                { label: 'Reviews Written', value: d.reviews_written, icon: '✍️' },
+                { label: 'Watchlist', value: d.watchlist_count, icon: '📋' },
+                { label: 'Watched', value: d.watched_count, icon: '✅' },
+                { label: 'Avg Rating', value: d.avg_rating_given + '⭐', icon: '⭐' },
+                { label: 'Top Genre', value: d.top_genre, icon: '🎭' },
+            ];
+            grid.innerHTML = statItems.map((s, i) => `
+                <div class="stat-card" style="animation: fadeInUp 0.4s ease ${i * 0.08}s backwards;">
+                    <div class="stat-number" style="font-size: 1.6rem;">${s.value}</div>
+                    <div class="stat-label">${s.icon} ${s.label}</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            const section = document.getElementById('live-stats-section');
+            if (section) section.style.display = 'none';
+        }
+    }
+
+    window.addEventListener('load', () => {
+        loadLiveStats();
+    });
 </script>
 {% endblock %}

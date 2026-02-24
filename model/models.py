@@ -80,6 +80,8 @@ class Watchlist(db.Model):
     poster_path = db.Column(db.String(500))
     tmdb_id = db.Column(db.Integer, index=True)
     added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Status: 'want_to_watch' | 'watching' | 'watched'
+    watch_status = db.Column(db.String(20), default='want_to_watch')
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -105,6 +107,12 @@ class Review(db.Model):
     def is_liked_by(self, user):
         """Check if user has liked this review"""
         return self.likes.filter_by(user_id=user.id).first() is not None
+    
+    @property
+    def liked_by_ids(self):
+        """Return set of user IDs who liked this review (for fast template checks)"""
+        return {like.user_id for like in self.likes.all()}
+
 
 class ReviewLike(db.Model):
     """Likes on reviews"""

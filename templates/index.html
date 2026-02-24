@@ -400,6 +400,23 @@
         <div class="recently-viewed-scroll" id="recently-viewed-scroll"></div>
     </section>
 
+    <!-- For You Section (authenticated users only) -->
+    {% if current_user.is_authenticated %}
+    <section id="for-you-section" style="margin-bottom: 3rem;" data-animate="fadeInUp" data-delay="100">
+        <h2 style="border-left: 4px solid #a855f7; padding-left: 1rem; margin-bottom: 2rem;" data-animate="fadeInLeft">
+            ✨ For You
+        </h2>
+        <div id="for-you-grid" class="movie-grid">
+            <!-- skeleton placeholders -->
+            {% for i in range(6) %}
+            <div class="movie-card for-you-skeleton"
+                style="background: rgba(255,255,255,0.04); border-radius: 16px; aspect-ratio: 2/3; animation: pulse 1.5s ease-in-out infinite alternate;">
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <section id="popular">
         <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;"
             data-animate="fadeInLeft">
@@ -436,6 +453,7 @@
 
 </div>
 {% endblock %}
+
 
 {% block scripts %}
 <script>
@@ -527,7 +545,7 @@
         return true;
     }
 
-    // Handle Enter key in movie input
+    // Auto-focus input on page load
     movieInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
             event.preventDefault();
@@ -539,6 +557,7 @@
     window.addEventListener('load', () => {
         movieInput.focus();
         renderRecentlyViewed();
+        loadForYou();
     });
 
     // ===== RECENTLY VIEWED (localStorage) =====
@@ -563,6 +582,37 @@
                 <div class="rv-title">${item.title}</div>
             </div>
         `).join('');
+    }
+
+    // ===== FOR YOU (authenticated) =====
+    async function loadForYou() {
+        const grid = document.getElementById('for-you-grid');
+        if (!grid) return;
+        try {
+            const res = await fetch('/api/for-you');
+            const data = await res.json();
+            if (!data.results || data.results.length === 0) {
+                const section = document.getElementById('for-you-section');
+                if (section) section.style.display = 'none';
+                return;
+            }
+            grid.innerHTML = data.results.map(m => `
+                <div class="movie-card" onclick="window.location.href='/movie/${encodeURIComponent(m.title || '')}'">
+                    <img src="${m.poster_path || ''}" alt="${m.title || ''}" class="movie-poster" loading="lazy"
+                         onerror="this.style.display='none'">
+                    <div class="movie-info">
+                        <h3 class="movie-title">${m.title || ''}</h3>
+                        <div class="movie-meta">
+                            <span class="rating">⭐ ${m.vote_average || 'N/A'}</span>
+                            <span class="year">${(m.release_date || '').slice(0, 4)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            const section = document.getElementById('for-you-section');
+            if (section) section.style.display = 'none';
+        }
     }
 </script>
 {% endblock %}

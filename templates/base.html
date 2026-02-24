@@ -330,8 +330,12 @@
             <div class="nav-links" id="navLinks">
                 <a href="/" class="{{ 'active-link' if request.path == '/' else '' }}">About</a>
                 <a href="/explore" class="{{ 'active-link' if request.path == '/explore' else '' }}">Explore</a>
+                <a href="/trending" class="{{ 'active-link' if request.path == '/trending' else '' }}">🔥 Trending</a>
+                <a href="/charts" class="{{ 'active-link' if request.path == '/charts' else '' }}">📊 Charts</a>
+                <a href="/compare" class="{{ 'active-link' if request.path == '/compare' else '' }}">⚖️ Compare</a>
                 <a href="/modyverse" class="{{ 'active-link' if request.path == '/modyverse' else '' }}">Modyverse</a>
                 <a href="/chat" class="{{ 'active-link' if request.path == '/chat' else '' }}">AI Chat</a>
+
 
                 {% if current_user.is_authenticated %}
                 <a href="/watchlist" class="{{ 'active-link' if request.path == '/watchlist' else '' }}">Watchlist</a>

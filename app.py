@@ -4,12 +4,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import os
 from datetime import datetime
+from collections import Counter
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation, get_user_personality
 from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details, search_movies, fetch_trending_movies
 from model import db
-from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory
+from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory, ReviewLike
 from utils.achievements import initialize_achievements, check_and_award_achievements, get_achievement_progress
 
 app = Flask(__name__)
@@ -180,8 +181,8 @@ def explore_page():
             traceback.print_exc()
 
     # Get Genres for dropdown
-    genres = sorted(movies_df['genre'].dropna().unique().tolist())
-    movie_list = movies_df[['title']].to_dict('records')
+    genres = sorted(movies_df['genre'].dropna().unique().tolist()) if not movies_df.empty else []
+    movie_list = movies_df[['title']].to_dict('records') if not movies_df.empty else []
 
     return render_template(
         "index.html",
@@ -335,6 +336,11 @@ def movie_details(title):
             db.session.rollback()
             
     reviews = Review.query.filter_by(movie_title=details['title']).order_by(Review.created_at.desc()).all()
+    
+    # Attach like counts and whether current user liked each review
+    for review in reviews:
+        review.like_count = review.get_like_count()
+        review.liked_by_me = review.is_liked_by(current_user) if current_user.is_authenticated else False
             
     return render_template("movie_details.html", movie=details, in_watchlist=in_watchlist, user=current_user, reviews=reviews)
 
@@ -397,15 +403,27 @@ def toggle_watchlist():
 @login_required
 def watchlist_page():
     wl_items = Watchlist.query.filter_by(user_id=current_user.id).all()
-    
-    # Enrich with watch providers
-    for item in wl_items:
-        if item.tmdb_id:
-            item.watch_providers = fetch_watch_providers(item.tmdb_id)
-        else:
-            item.watch_providers = None
-            
     return render_template("watchlist.html", movies=wl_items, user=current_user)
+
+@app.route("/api/watchlist/update-status", methods=["POST"])
+@login_required
+def update_watchlist_status():
+    """Update the watch status of a watchlist item"""
+    data = request.get_json()
+    movie_title = data.get("title")
+    new_status = data.get("status")
+    
+    valid_statuses = ["want_to_watch", "watching", "watched"]
+    if not movie_title or new_status not in valid_statuses:
+        return jsonify({"success": False, "message": "Invalid request"}), 400
+    
+    item = Watchlist.query.filter_by(user_id=current_user.id, movie_title=movie_title).first()
+    if not item:
+        return jsonify({"success": False, "message": "Not in watchlist"}), 404
+    
+    item.watch_status = new_status
+    db.session.commit()
+    return jsonify({"success": True, "status": new_status})
 
 @app.route("/api/achievements")
 @login_required
@@ -531,9 +549,164 @@ def get_watchlist_json():
             "title": item.movie_title,
             "poster_path": item.poster_path,
             "tmdb_id": item.tmdb_id,
-            "added_at": item.added_at.isoformat() if item.added_at else None
+            "added_at": item.added_at.isoformat() if item.added_at else None,
+            "watch_status": item.watch_status or "want_to_watch"
         } for item in items
     ]})
+
+
+# ===== NEW FEATURE 1: Trending Page =====
+@app.route("/trending")
+def trending_page():
+    """Dedicated trending movies page"""
+    return render_template("trending.html", user=current_user)
+
+
+# ===== NEW FEATURE 2: Top Charts Page =====
+@app.route("/charts")
+def charts_page():
+    """Top charts page with genre-based rankings"""
+    top_movies = []
+    genres = []
+    selected_genre = request.args.get("genre", "All")
+    
+    if not movies_df.empty:
+        genres = sorted(movies_df['genre'].dropna().unique().tolist())
+        
+        df = movies_df.copy()
+        if selected_genre and selected_genre != "All":
+            df = df[df['genre'].str.contains(selected_genre, na=False)]
+        
+        # Top by avg_rating with at least some votes
+        if 'avg_rating' in df.columns:
+            top = df.nlargest(20, 'avg_rating')[['title', 'genre', 'year', 'avg_rating']].to_dict('records')
+        else:
+            top = df.head(20)[['title', 'genre', 'year']].to_dict('records')
+        
+        # Enrich with TMDB poster
+        for i, m in enumerate(top):
+            details = fetch_movie_details(m['title'])
+            if details:
+                m['poster_path'] = details.get('poster_path', '')
+                m['vote_average'] = details.get('vote_average', m.get('avg_rating', 'N/A'))
+                m['release_date'] = details.get('release_date', str(m.get('year', '')))
+                m['tmdb_id'] = details.get('id')
+            else:
+                m['poster_path'] = ''
+                m['vote_average'] = m.get('avg_rating', 'N/A')
+                m['release_date'] = str(m.get('year', ''))
+            m['rank'] = i + 1
+        top_movies = top
+    
+    return render_template("charts.html", user=current_user, top_movies=top_movies, genres=genres, selected_genre=selected_genre)
+
+
+# ===== NEW FEATURE 3: Movie Comparison =====
+@app.route("/compare")
+def compare_page():
+    """Side-by-side movie comparison"""
+    title_a = request.args.get("a", "").strip()
+    title_b = request.args.get("b", "").strip()
+    movie_a = fetch_full_movie_details(title_a) if title_a else None
+    movie_b = fetch_full_movie_details(title_b) if title_b else None
+    
+    movie_list = movies_df[['title']].to_dict('records') if not movies_df.empty else []
+    return render_template("compare.html", user=current_user, movie_a=movie_a, movie_b=movie_b,
+                           title_a=title_a, title_b=title_b, movie_list=movie_list)
+
+
+# ===== NEW FEATURE 4: User Stats API =====
+@app.route("/api/stats")
+@login_required
+def api_user_stats():
+    """Return rich stats for the current user"""
+    reviews = Review.query.filter_by(user_id=current_user.id).all()
+    history = ViewingHistory.query.filter_by(user_id=current_user.id).all()
+    watchlist_count = Watchlist.query.filter_by(user_id=current_user.id).count()
+    watched_count = Watchlist.query.filter_by(user_id=current_user.id, watch_status='watched').count()
+    
+    # Avg rating given
+    avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0
+    
+    # Unique movies viewed
+    unique_movies = len(set(h.movie_title for h in history))
+    
+    # Top genre from reviews/history movie titles
+    all_titles = list(set([r.movie_title for r in reviews] + [h.movie_title for h in history]))
+    top_genre = "N/A"
+    if all_titles and not movies_df.empty:
+        genre_counts = Counter()
+        for title in all_titles:
+            row = movies_df[movies_df['title'] == title]
+            if not row.empty:
+                genre = str(row.iloc[0].get('genre', ''))
+                for g in genre.split('|'):
+                    g = g.strip()
+                    if g:
+                        genre_counts[g] += 1
+        if genre_counts:
+            top_genre = genre_counts.most_common(1)[0][0]
+    
+    return jsonify({
+        "movies_viewed": unique_movies,
+        "reviews_written": len(reviews),
+        "watchlist_count": watchlist_count,
+        "watched_count": watched_count,
+        "avg_rating_given": avg_rating,
+        "top_genre": top_genre,
+        "member_since": current_user.created_at.strftime("%b %Y") if current_user.created_at else "N/A"
+    })
+
+
+# ===== NEW FEATURE 5: Personalized "For You" Recommendations =====
+@app.route("/api/for-you")
+@login_required
+def api_for_you():
+    """Personalized recommendations based on viewing history"""
+    if not hybrid_model:
+        return jsonify({"results": []})
+    
+    history = ViewingHistory.query.filter_by(user_id=current_user.id).order_by(
+        ViewingHistory.viewed_at.desc()).limit(10).all()
+    reviews = Review.query.filter_by(user_id=current_user.id).order_by(
+        Review.created_at.desc()).limit(5).all()
+    
+    seed_titles = list(set([h.movie_title for h in history] + [r.movie_title for r in reviews]))
+    
+    if not seed_titles:
+        return jsonify({"results": [], "message": "Watch some movies first to get personalized picks!"})
+    
+    try:
+        recs = hybrid_model.recommend(seed_titles[:5], current_user.id, n=6)
+        results = []
+        for title in recs:
+            details = fetch_movie_details(title)
+            if details:
+                results.append(details)
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"results": [], "error": str(e)})
+
+
+# ===== NEW FEATURE 8: Review Likes =====
+@app.route("/api/reviews/<int:review_id>/like", methods=["POST"])
+@login_required
+def toggle_review_like(review_id):
+    """Toggle like on a review"""
+    review = Review.query.get_or_404(review_id)
+    
+    existing_like = ReviewLike.query.filter_by(user_id=current_user.id, review_id=review_id).first()
+    
+    if existing_like:
+        db.session.delete(existing_like)
+        liked = False
+    else:
+        new_like = ReviewLike(user_id=current_user.id, review_id=review_id)
+        db.session.add(new_like)
+        liked = True
+    
+    db.session.commit()
+    return jsonify({"success": True, "liked": liked, "like_count": review.get_like_count()})
 
 
 @app.errorhandler(404)

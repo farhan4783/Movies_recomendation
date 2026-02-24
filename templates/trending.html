@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}Trending Now - Movie Maverick{% endblock %}
+
+{% block head %}
+<style>
+    .trending-hero {
+        background: linear-gradient(135deg, rgba(229, 9, 20, 0.15) 0%, rgba(50, 50, 200, 0.08) 100%);
+        border-radius: 24px;
+        padding: 3rem 2rem 2rem;
+        margin-bottom: 3rem;
+        text-align: center;
+        border: 1px solid rgba(229, 9, 20, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .trending-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(229, 9, 20, 0.05) 0%, transparent 70%);
+        animation: rotateBg 20s linear infinite;
+    }
+
+    @keyframes rotateBg {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .trending-hero h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+
+    .trending-hero p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+
+    .tab-switcher {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-bottom: 3rem;
+    }
+
+    .tab-btn {
+        padding: 0.6rem 2rem;
+        border-radius: 50px;
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 500;
+        font-family: inherit;
+        transition: all 0.25s ease;
+    }
+
+    .tab-btn.active,
+    .tab-btn:hover {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-glow);
+    }
+
+    .trending-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1.5rem;
+        animation: fadeInUp 0.5s ease;
+    }
+
+    .trend-card {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: var(--card-bg);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .trend-card:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .trend-card .poster {
+        width: 100%;
+        aspect-ratio: 2/3;
+        object-fit: cover;
+        display: block;
+    }
+
+    .trend-card .no-poster {
+        width: 100%;
+        aspect-ratio: 2/3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .trend-rank {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: var(--primary-color);
+        color: white;
+        font-weight: 800;
+        font-size: 0.85rem;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(229, 9, 20, 0.5);
+        z-index: 2;
+    }
+
+    .trend-rank.top {
+        background: linear-gradient(135deg, #ffd700, #ff8c00);
+        color: #1a1a1a;
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+
+    .trend-info {
+        padding: 0.85rem;
+    }
+
+    .trend-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .trend-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    .trend-rating {
+        color: #ffd700;
+    }
+
+    .loading-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .loading-card {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .loading-poster {
+        width: 100%;
+        aspect-ratio: 2/3;
+        background: rgba(255, 255, 255, 0.05);
+        animation: shimmer 1.5s infinite;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 100%);
+        background-size: 200% 100%;
+    }
+
+    .loading-info {
+        padding: 0.85rem;
+    }
+
+    .loading-text {
+        height: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 5px;
+        margin-bottom: 6px;
+        animation: shimmer 1.5s infinite;
+        background-size: 200% 100%;
+        background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 100%);
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -1000px 0
+        }
+
+        100% {
+            background-position: 1000px 0
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 5rem;">
+    <div class="trending-hero" data-animate="fadeInUp">
+        <h1 class="text-gradient">🔥 Trending Movies</h1>
+        <p>What the world is watching right now — powered by TMDB.</p>
+    </div>
+
+    <div class="tab-switcher">
+        <button class="tab-btn active" id="btn-day" onclick="switchTab('day')">Today</button>
+        <button class="tab-btn" id="btn-week" onclick="switchTab('week')">This Week</button>
+    </div>
+
+    <div id="trending-container" class="trending-grid">
+        <!-- Skeleton placeholders -->
+        {% for _ in range(20) %}
+        <div class="loading-card">
+            <div class="loading-poster"></div>
+            <div class="loading-info">
+                <div class="loading-text" style="width:80%"></div>
+                <div class="loading-text" style="width:50%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentWindow = 'day';
+
+    async function loadTrending(window) {
+        const container = document.getElementById('trending-container');
+        container.innerHTML = `{% for _ in range(20) %}<div class="loading-card"><div class="loading-poster"></div><div class="loading-info"><div class="loading-text" style="width:80%"></div><div class="loading-text" style="width:50%"></div></div></div>{% endfor %}`;
+
+        try {
+            const res = await fetch(`/api/trending?window=${window}`);
+            const data = await res.json();
+            renderMovies(data.results || []);
+        } catch (e) {
+            container.innerHTML = '<p style="text-align:center; color: var(--text-secondary); padding: 3rem;">Failed to load trending movies. Check your TMDB API key.</p>';
+        }
+    }
+
+    function renderMovies(movies) {
+        const container = document.getElementById('trending-container');
+        if (!movies.length) {
+            container.innerHTML = '<p style="text-align:center; color: var(--text-secondary); padding: 3rem;">No movies found.</p>';
+            return;
+        }
+        container.innerHTML = movies.map((m, i) => `
+            <div class="trend-card" onclick="window.location.href='/movie/${encodeURIComponent(m.title)}'">
+                <div class="trend-rank ${i < 3 ? 'top' : ''}">${i + 1}</div>
+                ${m.poster_path
+                ? `<img src="${m.poster_path}" alt="${m.title}" class="poster" loading="lazy">`
+                : `<div class="no-poster">🎬</div>`}
+                <div class="trend-info">
+                    <div class="trend-title">${m.title}</div>
+                    <div class="trend-meta">
+                        <span class="trend-rating">⭐ ${m.vote_average ? parseFloat(m.vote_average).toFixed(1) : 'N/A'}</span>
+                        <span>${m.release_date ? m.release_date.substring(0, 4) : ''}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function switchTab(window) {
+        currentWindow = window;
+        document.getElementById('btn-day').classList.toggle('active', window === 'day');
+        document.getElementById('btn-week').classList.toggle('active', window === 'week');
+        loadTrending(window);
+    }
+
+    // Load on page load
+    loadTrending('day');
+</script>
+{% endblock %}

@@ -239,6 +239,49 @@
             opacity: 1;
         }
     }
+
+    /* === Status Pills === */
+    .status-pills {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.3rem;
+    }
+
+    .status-pill {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        line-height: 1.2;
+    }
+
+    .status-pill:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .status-pill.active.sp-want {
+        background: rgba(100, 149, 237, 0.2);
+        border-color: cornflowerblue;
+        color: cornflowerblue;
+    }
+
+    .status-pill.active.sp-watching {
+        background: rgba(255, 165, 0, 0.15);
+        border-color: orange;
+        color: orange;
+    }
+
+    .status-pill.active.sp-watched {
+        background: rgba(74, 222, 128, 0.15);
+        border-color: #4ade80;
+        color: #4ade80;
+    }
 </style>
 {% endblock %}
 
@@ -286,13 +329,6 @@
                 <div class="wl-no-poster">🎬</div>
                 {% endif %}
 
-                {% if item.watch_providers and item.watch_providers.flatrate %}
-                <div class="streaming-indicator"
-                    title="Available on: {{ item.watch_providers.flatrate|map(attribute='name')|join(', ') }}">
-                    Streaming
-                </div>
-                {% endif %}
-
                 <div class="wl-hover-overlay">
                     <button class="wl-action-btn"
                         onclick="event.stopPropagation(); window.location.href='/movie/{{ item.movie_title|urlencode }}'">
@@ -315,6 +351,16 @@
 
             <div class="wl-info">
                 <p class="wl-movie-title">{{ item.movie_title }}</p>
+                <!-- Watch Status Pills -->
+                <div class="status-pills" id="status-{{ item.id }}">
+                    {% set curr = item.watch_status or 'want_to_watch' %}
+                    <button class="status-pill {{ 'active sp-want' if curr == 'want_to_watch' else '' }}"
+                        onclick="setStatus('{{ item.movie_title }}', 'want_to_watch', {{ item.id }})">🕐 Want</button>
+                    <button class="status-pill {{ 'active sp-watching' if curr == 'watching' else '' }}"
+                        onclick="setStatus('{{ item.movie_title }}', 'watching', {{ item.id }})">▶️ Watching</button>
+                    <button class="status-pill {{ 'active sp-watched' if curr == 'watched' else '' }}"
+                        onclick="setStatus('{{ item.movie_title }}', 'watched', {{ item.id }})">✅ Watched</button>
+                </div>
                 <div class="wl-date">
                     {% if item.added_at %}
                     Added {{ item.added_at.strftime('%b %d, %Y') }}
@@ -326,6 +372,7 @@
     </div>
     {% endif %}
 </div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -357,6 +404,32 @@
         } catch (err) {
             console.error(err);
         }
+    }
+
+    async function setStatus(title, status, id) {
+        try {
+            const res = await fetch('/api/watchlist/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, status })
+            });
+            const data = await res.json();
+            if (data.success) {
+                const container = document.getElementById('status-' + id);
+                if (container) {
+                    container.querySelectorAll('.status-pill').forEach(btn => {
+                        btn.classList.remove('active', 'sp-want', 'sp-watching', 'sp-watched');
+                    });
+                    const map = { want_to_watch: 'sp-want', watching: 'sp-watching', watched: 'sp-watched' };
+                    const pills = container.querySelectorAll('.status-pill');
+                    const order = ['want_to_watch', 'watching', 'watched'];
+                    const idx = order.indexOf(status);
+                    if (pills[idx]) pills[idx].classList.add('active', map[status]);
+                }
+                const labels = { want_to_watch: 'Want to Watch', watching: 'Watching', watched: 'Watched ✅' };
+                if (typeof toast !== 'undefined') toast.success(`"${title}" marked as ${labels[status]}`);
+            }
+        } catch (err) { console.error(err); }
     }
 </script>
 {% endblock %}
