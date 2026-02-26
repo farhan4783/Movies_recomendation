@@ -364,15 +364,21 @@
         </h2>
         <div class="movie-grid">
             {% for movie in recommendations %}
-            <div class="movie-card" onclick="window.location.href='/movie/{{ movie.title|urlencode }}'">
+            <div class="movie-card"
+                onclick="window.location.href='{{ url_for('movie_details_by_id', tmdb_id=movie.id) if movie.id else '/movie/' + movie.title|urlencode }}'">
                 <img src="{{ movie.poster_path if movie.poster_path else 'https://via.placeholder.com/200x300?text=No+Image' }}"
                     alt="{{ movie.title }}" class="movie-poster" loading="lazy">
 
-                {% if movie.watch_providers and movie.watch_providers.flatrate %}
-                <div class="streaming-indicator"
-                    title="Available on: {{ movie.watch_providers.flatrate|map(attribute='name')|join(', ') }}">
-                    Streaming
+                <div class="movie-hover-overlay">
+                    <div class="play-icon">
+                        <svg viewBox="0 0 24 24" fill="white">
+                            <polygon points="5,3 19,12 5,21" />
+                        </svg>
+                    </div>
                 </div>
+
+                {% if movie.watch_providers and movie.watch_providers.flatrate %}
+                <div class="streaming-indicator">Streaming</div>
                 {% endif %}
 
                 <div class="movie-info">
@@ -424,18 +430,22 @@
         </h2>
         <div class="movie-grid">
             {% for movie in popular_movies %}
-            <div class="movie-card" onclick="window.location.href='/movie/{{ movie.title|urlencode }}'"
+            <div class="movie-card"
+                onclick="window.location.href='{{ url_for('movie_details_by_id', tmdb_id=movie.id) if movie.id else '/movie/' + movie.title|urlencode }}'"
                 style="position: relative;">
-                <div class="rank-badge {{ 'top3' if loop.index <= 3 else '' }}">
-                    {{ loop.index }}
-                </div>
+                <div class="rank-badge {{ 'top3' if loop.index <= 3 else '' }}">{{ loop.index }}</div>
                 <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster" loading="lazy">
 
-                {% if movie.watch_providers and movie.watch_providers.flatrate %}
-                <div class="streaming-indicator"
-                    title="Available on: {{ movie.watch_providers.flatrate|map(attribute='name')|join(', ') }}">
-                    Streaming
+                <div class="movie-hover-overlay">
+                    <div class="play-icon">
+                        <svg viewBox="0 0 24 24" fill="white">
+                            <polygon points="5,3 19,12 5,21" />
+                        </svg>
+                    </div>
                 </div>
+
+                {% if movie.watch_providers and movie.watch_providers.flatrate %}
+                <div class="streaming-indicator">Streaming</div>
                 {% endif %}
 
                 <div class="movie-info">
@@ -596,8 +606,10 @@
                 if (section) section.style.display = 'none';
                 return;
             }
-            grid.innerHTML = data.results.map(m => `
-                <div class="movie-card" onclick="window.location.href='/movie/${encodeURIComponent(m.title || '')}'">
+            grid.innerHTML = data.results.map(m => {
+                const href = m.id ? `/movie/id/${m.id}` : `/movie/${encodeURIComponent(m.title || '')}`;
+                return `
+                <div class="movie-card" onclick="window.location.href='${href}'">
                     <img src="${m.poster_path || ''}" alt="${m.title || ''}" class="movie-poster" loading="lazy"
                          onerror="this.style.display='none'">
                     <div class="movie-info">
@@ -607,8 +619,8 @@
                             <span class="year">${(m.release_date || '').slice(0, 4)}</span>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         } catch (e) {
             const section = document.getElementById('for-you-section');
             if (section) section.style.display = 'none';

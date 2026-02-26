@@ -204,6 +204,66 @@ def fetch_full_movie_details(title):
         return None
 
 
+def fetch_full_movie_details_by_id(tmdb_id):
+    """
+    Fetches comprehensive movie details directly by TMDB ID.
+    More reliable than title-based lookup.
+    """
+    if not TMDB_API_KEY or not tmdb_id:
+        return None
+
+    try:
+        # Get Full Details directly by ID
+        details_url = f"{BASE_URL}/movie/{tmdb_id}"
+        params = {
+            "api_key": TMDB_API_KEY,
+            "append_to_response": "credits,videos,similar,recommendations"
+        }
+        data = requests.get(details_url, params=params, timeout=10).json()
+
+        if data.get("status_code") == 34:  # TMDB error: resource not found
+            return None
+
+        # Process Cast (Top 10)
+        cast = []
+        for member in data.get("credits", {}).get("cast", [])[:10]:
+            cast.append({
+                "name": member.get("name"),
+                "character": member.get("character"),
+                "profile_path": f"{IMAGE_BASE_URL}{member.get('profile_path')}" if member.get("profile_path") else None
+            })
+
+        # Process Videos (Trailer)
+        trailer_key = None
+        for video in data.get("videos", {}).get("results", []):
+            if video.get("type") == "Trailer" and video.get("site") == "YouTube":
+                trailer_key = video.get("key")
+                break
+
+        # Get Watch Providers
+        watch_providers = fetch_watch_providers(tmdb_id)
+
+        return {
+            "id": data.get("id"),
+            "title": data.get("title"),
+            "overview": data.get("overview"),
+            "poster_path": f"{IMAGE_BASE_URL}{data.get('poster_path')}" if data.get('poster_path') else None,
+            "backdrop_path": f"https://image.tmdb.org/t/p/original{data.get('backdrop_path')}" if data.get('backdrop_path') else None,
+            "release_date": data.get("release_date"),
+            "vote_average": data.get("vote_average"),
+            "runtime": data.get("runtime"),
+            "genres": [g["name"] for g in data.get("genres", [])],
+            "tagline": data.get("tagline"),
+            "cast": cast,
+            "trailer_url": f"https://www.youtube.com/embed/{trailer_key}" if trailer_key else None,
+            "similar": data.get("similar", {}).get("results", [])[:6],
+            "watch_providers": watch_providers
+        }
+    except Exception as e:
+        print(f"Error fetching full details for ID {tmdb_id}: {e}")
+        return None
+
+
 def search_movies(query, page=1):
     """
     Searches TMDB for movies matching a query string.

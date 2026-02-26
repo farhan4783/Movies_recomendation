@@ -8,7 +8,7 @@ from collections import Counter
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation, get_user_personality
-from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details, search_movies, fetch_trending_movies
+from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details, fetch_full_movie_details_by_id, search_movies, fetch_trending_movies
 from model import db
 from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory, ReviewLike
 from utils.achievements import initialize_achievements, check_and_award_achievements, get_achievement_progress
@@ -309,15 +309,30 @@ def api_modyverse():
     response_html = get_mood_recommendation(data)
     return jsonify({"html": response_html})
 
+@app.route("/movie/id/<int:tmdb_id>")
+def movie_details_by_id(tmdb_id):
+    """Fetch movie details by TMDB ID — reliable, avoids URL encoding issues."""
+    details = fetch_full_movie_details_by_id(tmdb_id)
+
+    if not details:
+        return render_template("404.html", user=current_user), 404
+
+    return _render_movie_details(details)
+
+
 @app.route("/movie/<path:title>")
 def movie_details(title):
-    # Fetch full details
+    """Fetch movie details by title (legacy / fallback route)."""
     details = fetch_full_movie_details(title)
-    
-    if not details:
-        # Fallback if not found by title 
-        return render_template("index.html", error=f"Movie '{title}' details not found.", user=current_user)
 
+    if not details:
+        return render_template("404.html", user=current_user), 404
+
+    return _render_movie_details(details)
+
+
+def _render_movie_details(details):
+    """Shared logic for rendering movie details page."""
     in_watchlist = False
     if current_user.is_authenticated:
         exists = Watchlist.query.filter_by(user_id=current_user.id, movie_title=details['title']).first()
@@ -334,14 +349,14 @@ def movie_details(title):
             db.session.commit()
         except Exception:
             db.session.rollback()
-            
+
     reviews = Review.query.filter_by(movie_title=details['title']).order_by(Review.created_at.desc()).all()
-    
+
     # Attach like counts and whether current user liked each review
     for review in reviews:
         review.like_count = review.get_like_count()
         review.liked_by_me = review.is_liked_by(current_user) if current_user.is_authenticated else False
-            
+
     return render_template("movie_details.html", movie=details, in_watchlist=in_watchlist, user=current_user, reviews=reviews)
 
 @app.route("/api/submit_review", methods=["POST"])

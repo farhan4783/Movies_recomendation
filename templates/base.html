@@ -548,19 +548,21 @@
                 list.innerHTML = `<div class="search-hint">No results found for "<strong>${query}</strong>"</div>`;
                 return;
             }
-            list.innerHTML = results.map(m => `
-                <a href="/movie/${encodeURIComponent(m.title)}" class="search-result-item" onclick="closeSearchModal()">
+            list.innerHTML = results.map(m => {
+                const href = m.id ? `/movie/id/${m.id}` : `/movie/${encodeURIComponent(m.title)}`;
+                return `
+                <a href="${href}" class="search-result-item" onclick="closeSearchModal()">
                     ${m.poster_path
-                    ? `<img src="${m.poster_path}" alt="${m.title}" class="search-result-poster">`
-                    : `<div class="search-result-poster" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`
-                }
+                        ? `<img src="${m.poster_path}" alt="${m.title}" class="search-result-poster">`
+                        : `<div class="search-result-poster" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:rgba(255,255,255,0.05);border-radius:8px;">🎬</div>`
+                    }
                     <div class="search-result-info">
                         <div class="search-result-title">${m.title}</div>
                         <div class="search-result-meta">${m.release_date ? m.release_date.substring(0, 4) : 'N/A'}</div>
                     </div>
                     ${m.vote_average ? `<div class="search-result-rating">⭐ ${m.vote_average}</div>` : ''}
-                </a>
-            `).join('');
+                </a>`;
+            }).join('');
         }
 
         // Load notification count
