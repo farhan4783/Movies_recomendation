@@ -5,10 +5,11 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 import os
 from datetime import datetime
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation, get_user_personality
-from utils.tmdb_client import fetch_movie_details, fetch_popular_movies, fetch_full_movie_details, fetch_full_movie_details_by_id, search_movies, fetch_trending_movies
+from utils.tmdb_client import fetch_movie_details, fetch_movie_details_batch, fetch_popular_movies, fetch_full_movie_details, fetch_full_movie_details_by_id, search_movies, fetch_trending_movies
 from model import db
 from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory, ReviewLike
 from utils.achievements import initialize_achievements, check_and_award_achievements, get_achievement_progress
@@ -70,13 +71,11 @@ def explore_page():
     error = None
     popular_movies_display = []
 
-    # Get Popular movies for default view
+    # Get Popular movies for default view — fetch details in parallel
     if pop_model:
-        # Get top 10 titles
         pop_titles = pop_model.recommend(n=6)
-        # Fetch details for them
-        for title in pop_titles:
-            details = fetch_movie_details(title)
+        details_list = fetch_movie_details_batch(pop_titles)
+        for title, details in zip(pop_titles, details_list):
             if details:
                 popular_movies_display.append(details)
             else:
@@ -116,8 +115,10 @@ def explore_page():
                 # Request more candidates to allow for filtering
                 # If we filter, we need a larger pool
                 candidate_pool_size = 50 if (filter_genre or filter_min_year or filter_min_rating) else 5
-                
-                raw_recs = hybrid_model.recommend(selected_movies, current_user_id, n=candidate_pool_size)
+
+                raw_recs = hybrid_model.recommend(
+                    selected_movies, current_user_id, n=candidate_pool_size, movies_df=movies_df
+                )
                 
                 # Apply Filters
                 filtered_recs = []
@@ -157,18 +158,19 @@ def explore_page():
                 elif not filtered_recs:
                      error = "No recommendations found."
 
-                # Fetch details for filtered recommendations
-                for title in filtered_recs:
-                    details = fetch_movie_details(title)
+                # Fetch details for filtered recommendations — parallel
+                rec_details = fetch_movie_details_batch(filtered_recs)
+                for title, details in zip(filtered_recs, rec_details):
                     if details:
                         recommendations.append(details)
                     else:
-                        movie_row = movies_df[movies_df['title'] == title].iloc[0]
+                        rows = movies_df[movies_df['title'] == title]
+                        movie_row = rows.iloc[0] if not rows.empty else None
                         recommendations.append({
                             "title": title,
                             "poster_path": "https://via.placeholder.com/200x300?text=No+Image",
-                            "vote_average": movie_row.get('avg_rating', 'N/A'),
-                            "release_date": str(movie_row.get('year', ''))
+                            "vote_average": movie_row.get('avg_rating', 'N/A') if movie_row is not None else 'N/A',
+                            "release_date": str(movie_row.get('year', '')) if movie_row is not None else ''
                         })
                     
             if not recommendations and not error:
@@ -598,9 +600,10 @@ def charts_page():
         else:
             top = df.head(20)[['title', 'genre', 'year']].to_dict('records')
         
-        # Enrich with TMDB poster
-        for i, m in enumerate(top):
-            details = fetch_movie_details(m['title'])
+        # Enrich with TMDB poster — fetch in parallel
+        titles = [m['title'] for m in top]
+        details_list = fetch_movie_details_batch(titles)
+        for i, (m, details) in enumerate(zip(top, details_list)):
             if details:
                 m['poster_path'] = details.get('poster_path', '')
                 m['vote_average'] = details.get('vote_average', m.get('avg_rating', 'N/A'))
@@ -692,12 +695,10 @@ def api_for_you():
         return jsonify({"results": [], "message": "Watch some movies first to get personalized picks!"})
     
     try:
-        recs = hybrid_model.recommend(seed_titles[:5], current_user.id, n=6)
-        results = []
-        for title in recs:
-            details = fetch_movie_details(title)
-            if details:
-                results.append(details)
+        recs = hybrid_model.recommend(seed_titles[:5], current_user.id, n=6, movies_df=movies_df)
+        # Fetch details in parallel
+        details_list = fetch_movie_details_batch(recs)
+        results = [d for d in details_list if d]
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"results": [], "error": str(e)})
@@ -727,6 +728,14 @@ def toggle_review_like(review_id):
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html", user=current_user), 404
+
+
+# ===== Discover Page =====
+@app.route("/discover")
+def discover_page():
+    """Genre-browsing and mood-based discovery page."""
+    genres = sorted(movies_df['genre'].dropna().unique().tolist()) if not movies_df.empty else []
+    return render_template("discover.html", user=current_user, genres=genres)
 
 
 if __name__ == "__main__":
