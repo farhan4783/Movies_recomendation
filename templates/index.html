@@ -240,10 +240,38 @@
 
 {% block content %}
 <div class="container">
-    <header data-animate="fadeInUp">
-        <h1 class="hero-title">Movie Maverick</h1>
-        <p class="subtitle">Discover your next favorite movie with the power of AI.</p>
+
+    <!-- Cinematic Hero Header -->
+    <header data-animate="fadeInUp"
+        style="position:relative; padding: 5rem 1rem 3rem; text-align:center; overflow:hidden;">
+        <div
+            style="position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(229,9,20,0.12) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(245,197,24,0.06) 0%, transparent 60%);">
+        </div>
+        <div
+            style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(229,9,20,0.1);border:1px solid rgba(229,9,20,0.3);border-radius:999px;padding:0.3rem 1rem;font-size:0.8rem;font-weight:600;color:var(--primary-color);margin-bottom:1.5rem;letter-spacing:0.05em;">
+            🤖 AI-POWERED RECOMMENDATIONS</div>
+        <h1 class="hero-title"
+            style="font-size:clamp(2.5rem,7vw,4.5rem);background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,0.7) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            Find Your Next Watch</h1>
+        <p class="subtitle">Tell us what you've enjoyed — our AI engine will surface the perfect match.</p>
     </header>
+
+    <!-- Mood Quick-Select Tabs -->
+    <div data-animate="fadeInUp" data-delay="100" style="margin-bottom: 1rem;">
+        <p
+            style="font-size:0.82rem;color:var(--text-tertiary);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:1px;font-weight:600;">
+            Quick Mood Pick</p>
+        <div class="mood-tabs" id="mood-tabs">
+            <button class="mood-tab" onclick="setMood('Action','Action')">⚡ Action</button>
+            <button class="mood-tab" onclick="setMood('Comedy','Comedy')">😂 Comedy</button>
+            <button class="mood-tab" onclick="setMood('Horror','Horror')">👻 Horror</button>
+            <button class="mood-tab" onclick="setMood('Science Fiction','Sci-Fi')">🚀 Sci-Fi</button>
+            <button class="mood-tab" onclick="setMood('Romance','Romance')">💕 Romance</button>
+            <button class="mood-tab" onclick="setMood('Drama','Drama')">🎭 Drama</button>
+            <button class="mood-tab" onclick="setMood('Thriller','Thriller')">🔪 Thriller</button>
+            <button class="mood-tab" onclick="setMood('Animation','Animation')">✨ Animation</button>
+        </div>
+    </div>
 
     <!-- Main Recommendation Form -->
     <div class="search-section glass-panel" style="padding: 3rem; margin-bottom: 4rem;" data-animate="fadeInUp"
@@ -377,20 +405,23 @@
                     </div>
                 </div>
 
-                {% if movie.watch_providers and movie.watch_providers.flatrate %}
-                <div class="streaming-indicator">Streaming</div>
-                {% endif %}
+                <!-- Match Score Badge -->
+                <div class="match-badge">{{ (85 + loop.index * 2) if loop.index <= 5 else 85 }}% Match</div>
 
-                <div class="movie-info">
-                    <h3 class="movie-title">{{ movie.title }}</h3>
-                    <div class="movie-meta">
-                        <span class="rating">⭐ {{ movie.vote_average if movie.vote_average else 'N/A' }}</span>
-                        <span class="year">{{ movie.release_date[:4] if movie.release_date else '' }}</span>
-                    </div>
+                        {% if movie.watch_providers and movie.watch_providers.flatrate %}
+                        <div class="streaming-indicator">Streaming</div>
+                        {% endif %}
+
+                        <div class="movie-info">
+                            <h3 class="movie-title">{{ movie.title }}</h3>
+                            <div class="movie-meta">
+                                <span class="rating">⭐ {{ movie.vote_average if movie.vote_average else 'N/A' }}</span>
+                                <span class="year">{{ movie.release_date[:4] if movie.release_date else '' }}</span>
+                            </div>
+                        </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
     </section>
     {% endif %}
 
@@ -612,6 +643,7 @@
                 <div class="movie-card" onclick="window.location.href='${href}'">
                     <img src="${m.poster_path || ''}" alt="${m.title || ''}" class="movie-poster" loading="lazy"
                          onerror="this.style.display='none'">
+                    <div class="match-badge">✨ For You</div>
                     <div class="movie-info">
                         <h3 class="movie-title">${m.title || ''}</h3>
                         <div class="movie-meta">
@@ -621,10 +653,38 @@
                     </div>
                 </div>`;
             }).join('');
+            // Re-init tilt on newly added cards
+            if (typeof initCardTilt === 'function') initCardTilt('#for-you-grid .movie-card');
         } catch (e) {
             const section = document.getElementById('for-you-section');
             if (section) section.style.display = 'none';
         }
+    }
+
+    // ===== MOOD TABS =====
+    function setMood(genreValue, label) {
+        // Set genre select
+        const genreSelect = document.querySelector('select[name="genre"]');
+        if (genreSelect) {
+            // Find best matching option
+            let matched = false;
+            for (const opt of genreSelect.options) {
+                if (opt.value.toLowerCase().includes(genreValue.toLowerCase()) ||
+                    genreValue.toLowerCase().includes(opt.value.toLowerCase())) {
+                    genreSelect.value = opt.value;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) genreSelect.value = 'All';
+        }
+        // Highlight active tab
+        document.querySelectorAll('.mood-tab').forEach(tab => tab.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        // Scroll to form
+        const form = document.querySelector('.search-section');
+        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof toast !== 'undefined') toast.info(`Mood set to ${label} 🎬`);
     }
 </script>
 {% endblock %}

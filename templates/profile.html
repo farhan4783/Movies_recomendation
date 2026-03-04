@@ -3,6 +3,7 @@
 {% block title %}My Profile - Movie Maverick{% endblock %}
 
 {% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
     .profile-page {
         padding-top: 6rem;
@@ -424,24 +425,27 @@
                 <!-- Stats Row -->
                 <div class="stats-row">
                     <div class="stat-card">
-                        <div class="stat-number">{{ reviews|length }}</div>
+                        <div class="stat-number" data-countup>{{ reviews|length }}</div>
                         <div class="stat-label">Reviews</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">{{ watchlist_count }}</div>
+                        <div class="stat-number" data-countup>{{ watchlist_count }}</div>
                         <div class="stat-label">Watchlist</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">{{ user.followers.count() if user.followers else 0 }}</div>
+                        <div class="stat-number" data-countup>{{ user.followers.count() if user.followers else 0 }}
+                        </div>
                         <div class="stat-label">Followers</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">{{ user.following.count() if user.following else 0 }}</div>
+                        <div class="stat-number" data-countup>{{ user.following.count() if user.following else 0 }}
+                        </div>
                         <div class="stat-label">Following</div>
                     </div>
                     {% if achievements %}
                     <div class="stat-card">
-                        <div class="stat-number">{{ achievements | selectattr('is_earned') | list | length }}</div>
+                        <div class="stat-number" data-countup>{{ achievements | selectattr('is_earned') | list | length
+                            }}</div>
                         <div class="stat-label">Badges</div>
                     </div>
                     {% endif %}
@@ -531,6 +535,14 @@
                 </div>
             </div>
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- Genre Taste Chart -->
+    <div style="margin-bottom: 3rem;" id="genre-chart-section" class="glass-panel" style="padding:2rem;display:none;">
+        <h2 class="section-header">🎭 Genre Taste</h2>
+        <div style="max-width: 540px;">
+            <canvas id="genreChart" height="220"></canvas>
         </div>
     </div>
 
@@ -632,10 +644,46 @@
             ];
             grid.innerHTML = statItems.map((s, i) => `
                 <div class="stat-card" style="animation: fadeInUp 0.4s ease ${i * 0.08}s backwards;">
-                    <div class="stat-number" style="font-size: 1.6rem;">${s.value}</div>
+                    <div class="stat-number" style="font-size: 1.6rem;" data-countup>${s.value}</div>
                     <div class="stat-label">${s.icon} ${s.label}</div>
                 </div>
             `).join('');
+            // Re-trigger count-up for dynamically added elements
+            if (typeof initCountUps === 'function') initCountUps();
+
+            // Render genre chart if genre_breakdown available
+            if (d.genre_breakdown && Object.keys(d.genre_breakdown).length > 1) {
+                const section = document.getElementById('genre-chart-section');
+                if (section) section.style.display = 'block';
+                const ctx = document.getElementById('genreChart');
+                if (ctx && typeof Chart !== 'undefined') {
+                    const genres = Object.keys(d.genre_breakdown).slice(0, 8);
+                    const counts = genres.map(g => d.genre_breakdown[g]);
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: genres,
+                            datasets: [{
+                                label: 'Movies Watched',
+                                data: counts,
+                                backgroundColor: genres.map((_, i) =>
+                                    `hsla(${(i * 40) % 360}, 70%, 60%, 0.75)`),
+                                borderRadius: 8,
+                                borderSkipped: false,
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { ticks: { color: '#a3a3a3' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                                y: { ticks: { color: '#fff', font: { weight: 600 } }, grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+            }
         } catch (e) {
             const section = document.getElementById('live-stats-section');
             if (section) section.style.display = 'none';

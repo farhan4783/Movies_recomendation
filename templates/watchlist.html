@@ -319,6 +319,49 @@
     </div>
 
     {% else %}
+
+    <!-- Progress Summary Bar -->
+    {% set want = movies | selectattr('watch_status', 'equalto', 'want_to_watch') | list | length + movies |
+    selectattr('watch_status', 'none') | list | length %}
+    {% set watching = movies | selectattr('watch_status', 'equalto', 'watching') | list | length %}
+    {% set watched = movies | selectattr('watch_status', 'equalto', 'watched') | list | length %}
+    {% set total = movies | length %}
+    <div class="glass-panel"
+        style="padding:1.5rem 2rem;margin-bottom:2.5rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;font-size:0.85rem;">
+                <span style="color:var(--text-secondary);">Watch Progress</span>
+                <span style="color:var(--gold);font-weight:700;">{{ watched }}/{{ total }} Watched</span>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;">
+                {% if total > 0 %}
+                <div
+                    style="height:100%;width:{{ (watched/total*100)|round|int }}%;background:linear-gradient(90deg,var(--primary-color),var(--gold));border-radius:999px;transition:width 1s ease;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+            <div style="text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:cornflowerblue;" data-countup>{{ want }}</div>
+                <div
+                    style="font-size:0.72rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">
+                    🕐 Want</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:orange;" data-countup>{{ watching }}</div>
+                <div
+                    style="font-size:0.72rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">
+                    ▶️ Watching</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:#4ade80;" data-countup>{{ watched }}</div>
+                <div
+                    style="font-size:0.72rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">
+                    ✅ Watched</div>
+            </div>
+        </div>
+    </div>
     <div class="wl-grid" id="watchlist-grid">
         {% for item in movies %}
         <div class="wl-card" id="wl-card-{{ item.id }}" style="animation-delay: {{ loop.index0 * 0.05 }}s">

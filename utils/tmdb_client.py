@@ -371,3 +371,73 @@ def _fetch_providers_parallel(movie_ids, max_workers=8):
             except Exception:
                 results[idx] = None
     return results
+
+
+# ---------------------------------------------------------------------------
+# Genre Map & Discover by Genre
+# ---------------------------------------------------------------------------
+
+GENRE_MAP = {
+    "Action": 28,
+    "Adventure": 12,
+    "Animation": 16,
+    "Comedy": 35,
+    "Crime": 80,
+    "Documentary": 99,
+    "Drama": 18,
+    "Family": 10751,
+    "Fantasy": 14,
+    "History": 36,
+    "Horror": 27,
+    "Music": 10402,
+    "Mystery": 9648,
+    "Romance": 10749,
+    "Science Fiction": 878,
+    "Sci-Fi": 878,
+    "TV Movie": 10770,
+    "Thriller": 53,
+    "War": 10752,
+    "Western": 37,
+}
+
+
+def fetch_movies_by_genre(genre_id: int, page: int = 1) -> list:
+    """Fetch movies from TMDB /discover/movie filtered by genre_id."""
+    cache_key = f"discover_genre_{genre_id}_p{page}"
+    cached = _cache.get(cache_key)
+    if cached:
+        return cached
+
+    api_key = os.getenv("TMDB_API_KEY")
+    if not api_key:
+        return []
+    try:
+        resp = requests.get(
+            "https://api.themoviedb.org/3/discover/movie",
+            params={
+                "api_key": api_key,
+                "with_genres": genre_id,
+                "sort_by": "popularity.desc",
+                "page": page,
+                "language": "en-US",
+                "include_adult": "false",
+            },
+            timeout=6,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        results = [
+            {
+                "id": m.get("id"),
+                "title": m.get("title"),
+                "poster_path": f"{IMAGE_BASE_URL}{m['poster_path']}" if m.get("poster_path") else None,
+                "release_date": m.get("release_date", ""),
+                "vote_average": round(m.get("vote_average", 0), 1),
+                "overview": m.get("overview", ""),
+            }
+            for m in data.get("results", [])[:20]
+        ]
+        _cache.set(cache_key, results, ttl=1800)
+        return results
+    except Exception:
+        return []

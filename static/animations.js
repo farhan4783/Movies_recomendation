@@ -456,6 +456,82 @@ function smoothScrollTo(target, duration = 1000) {
     requestAnimationFrame(animation);
 }
 
+// ==================== 3D CARD TILT ====================
+
+function initCardTilt(selector = '.movie-card') {
+    if (window.matchMedia('(hover: none)').matches) return; // skip on touch devices
+    document.querySelectorAll(selector).forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const cx = rect.width / 2;
+            const cy = rect.height / 2;
+            const rotY = ((x - cx) / cx) * 7;   // ±7 degrees
+            const rotX = -((y - cy) / cy) * 5;  // ±5 degrees
+            card.style.transform = `translateY(-10px) scale(1.03) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+            card.style.transition = 'transform 0.05s ease';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+            card.style.transition = 'transform 0.4s cubic-bezier(0.23,1,0.32,1)';
+        });
+        card.style.transformStyle = 'preserve-3d';
+        card.style.willChange = 'transform';
+    });
+}
+
+// ==================== PAGE LOADER ====================
+
+function initPageLoader() {
+    const bar = document.createElement('div');
+    bar.className = 'page-loader-bar';
+    document.body.prepend(bar);
+    // Animate to 80% immediately then to 100% on load
+    requestAnimationFrame(() => { bar.style.width = '80%'; });
+    window.addEventListener('load', () => {
+        bar.style.width = '100%';
+        bar.style.transition = 'width 0.3s ease, opacity 0.4s ease 0.3s';
+        setTimeout(() => { bar.style.opacity = '0'; setTimeout(() => bar.remove(), 400); }, 600);
+    });
+}
+
+// ==================== COUNT UP ANIMATION ====================
+
+function countUp(element, target, duration = 1200) {
+    const start = parseFloat(element.textContent) || 0;
+    const end = parseFloat(target);
+    const suffix = String(target).replace(/[\d.]/g, '');
+    if (isNaN(end)) { element.textContent = target; return; }
+    const startTime = performance.now();
+    function tick(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        const current = start + (end - start) * ease;
+        element.textContent = (Number.isInteger(end) ? Math.round(current) : current.toFixed(1)) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+function initCountUps() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                countUp(el, el.dataset.target || el.textContent);
+                observer.unobserve(el);
+            }
+        });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('[data-countup]').forEach(el => {
+        el.dataset.target = el.textContent;
+        el.textContent = '0';
+        observer.observe(el);
+    });
+}
+
 // ==================== INITIALIZE ====================
 
 // Global instances
@@ -465,6 +541,9 @@ const loading = new LoadingManager();
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Page loader bar
+    initPageLoader();
+
     // Initialize scroll animations
     const scrollAnimations = new ScrollAnimationObserver();
 
@@ -473,6 +552,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add ripple effect to buttons
     addRippleEffect('.primary-btn, .secondary-btn');
+
+    // 3D tilt on movie cards (desktop only)
+    initCardTilt();
+
+    // Count-up for stat numbers
+    initCountUps();
 
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

@@ -5,6 +5,12 @@
     --primary-light: #ff6b72;
     --primary-dark: #b8070f;
 
+    /* Accent Colors – NEW */
+    --gold: #f5c518;
+    --gold-glow: rgba(245, 197, 24, 0.35);
+    --teal: #00cfc8;
+    --teal-glow: rgba(0, 207, 200, 0.3);
+
     /* Background Colors */
     --background-color: #050505;
     --surface-color: #0c0c0c;
@@ -45,6 +51,7 @@
     --shadow-2xl: 0 35px 60px -15px rgba(0, 0, 0, 0.7);
     --shadow-glow: 0 0 20px rgba(229, 9, 20, 0.4);
     --shadow-glow-lg: 0 0 40px rgba(229, 9, 20, 0.6);
+    --shadow-gold: 0 0 24px var(--gold-glow);
 
     /* Typography */
     --font-heading: 'Outfit', sans-serif;
@@ -1064,35 +1071,107 @@ textarea::placeholder {
 
 footer {
     background: #000;
-    padding: 4rem 2rem;
+    padding: 4rem 2rem 2rem;
     margin-top: 6rem;
     border-top: 1px solid var(--glass-border);
-    text-align: center;
     color: var(--text-secondary);
 }
 
-.footer-logo {
+.footer-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 3rem;
+    max-width: 1200px;
+    margin: 0 auto 2.5rem;
+    text-align: left;
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 2rem;
+    }
+}
+
+.footer-brand .footer-logo {
     font-family: var(--font-heading);
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+    display: inline-block;
+}
+
+.footer-brand p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: 250px;
+}
+
+.footer-col-title {
+    font-size: 0.75rem;
     font-weight: 700;
-    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
     margin-bottom: 1rem;
 }
 
 .footer-links {
     display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin: 1.5rem 0;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.65rem;
 }
 
 .footer-links a {
+    font-size: 0.9rem;
     transition: color var(--transition-base);
 }
 
 .footer-links a:hover {
     color: var(--primary-color);
+}
+
+.footer-social {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.footer-social-btn {
+    width: 38px;
+    height: 38px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+    color: var(--text-secondary);
+}
+
+.footer-social-btn:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-glow);
+    color: white;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 1.5rem;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
 }
 
 /* ==================== ALERTS & MESSAGES ==================== */
@@ -1345,11 +1424,139 @@ footer {
 /* ==================== PRINT STYLES ==================== */
 
 @media print {
-
     .sticky-nav,
     .hamburger,
     footer,
     .toast-container {
         display: none;
     }
+}
+
+/* ==================== NEW: MATCH SCORE BADGE ==================== */
+
+.match-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: linear-gradient(135deg, rgba(0, 207, 200, 0.9), rgba(0, 168, 162, 0.9));
+    color: #003635;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.22rem 0.55rem;
+    border-radius: 6px;
+    z-index: 4;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 2px 8px rgba(0, 207, 200, 0.4);
+    pointer-events: none;
+}
+
+/* ==================== NEW: MOOD TABS ==================== */
+
+.mood-tabs {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.mood-tab {
+    padding: 0.45rem 1.1rem;
+    border-radius: var(--radius-full);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.mood-tab:hover,
+.mood-tab.active {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.2);
+}
+
+/* ==================== NEW: FILM-STRIP HORIZONTAL SCROLL ==================== */
+
+.film-strip-scroll {
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 1.25rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) rgba(255,255,255,0.05);
+}
+
+.film-strip-scroll::-webkit-scrollbar {
+    height: 5px;
+}
+
+.film-strip-scroll .movie-card {
+    flex-shrink: 0;
+    width: 165px;
+    scroll-snap-align: start;
+    animation: none;
+    opacity: 1;
+}
+
+/* ==================== NEW: PAGE LOADER ==================== */
+
+.page-loader-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--gold), var(--teal));
+    z-index: 10002;
+    width: 0;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 12px var(--gold-glow);
+    border-radius: 0 2px 2px 0;
+}
+
+/* ==================== NEW: GENRE PILL TAGS ON CARDS ==================== */
+
+.card-genre-pill {
+    position: absolute;
+    bottom: 52px;
+    left: 8px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-secondary);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    z-index: 4;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.movie-card:hover .card-genre-pill {
+    opacity: 1;
+}
+
+/* ==================== NEW: STAT COUNT UP ==================== */
+
+.count-up {
+    display: inline-block;
+    transition: all 0.1s;
 }

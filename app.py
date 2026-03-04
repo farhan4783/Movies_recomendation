@@ -738,5 +738,30 @@ def discover_page():
     return render_template("discover.html", user=current_user, genres=genres)
 
 
+# ===== NEW: Discover by Genre API =====
+@app.route("/api/discover/genre")
+def api_discover_by_genre():
+    """Returns movies from TMDB filtered by genre name. Used by mood-tabs and discover page."""
+    from utils.tmdb_client import GENRE_MAP
+    genre_name = request.args.get('genre', 'Action').strip()
+    page = request.args.get('page', 1, type=int)
+    genre_id = GENRE_MAP.get(genre_name)
+    if not genre_id:
+        # Try partial match
+        for gname, gid in GENRE_MAP.items():
+            if genre_name.lower() in gname.lower() or gname.lower() in genre_name.lower():
+                genre_id = gid
+                break
+    if not genre_id:
+        return jsonify({"results": [], "error": f"Unknown genre: {genre_name}"})
+    try:
+        from utils.tmdb_client import fetch_movies_by_genre
+        movies = fetch_movies_by_genre(genre_id, page=page)
+        return jsonify({"results": movies, "genre": genre_name, "genre_id": genre_id})
+    except Exception as e:
+        app.logger.error(f"Discover by genre error: {e}")
+        return jsonify({"results": [], "error": str(e)})
+
+
 if __name__ == "__main__":
     app.run(debug=True)

@@ -426,17 +426,20 @@
         </section>
         {% endif %}
 
-        <!-- Similar Movies -->
+        <!-- Similar Movies (film-strip horizontal scroll) -->
         {% if movie.similar %}
         <section class="similar-section" style="margin-bottom: 4rem;">
-            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">You May
-                Also Like</h2>
-            <div class="movie-grid">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin:0;">You May Also Like
+                </h2>
+                <span style="font-size:0.8rem;color:var(--text-tertiary);">← Scroll →</span>
+            </div>
+            <div class="film-strip-scroll" id="similar-scroll">
                 {% for sim in movie.similar %}
                 <div class="movie-card"
                     onclick="window.location.href='{{ url_for('movie_details_by_id', tmdb_id=sim.id) if sim.id else '/movie/' + (sim.title|urlencode) }}'">
-                    <img src="{{ 'https://image.tmdb.org/t/p/w500' + sim.poster_path if sim.poster_path else 'https://via.placeholder.com/200x300' }}"
-                        alt="{{ sim.title }}" class="movie-poster">
+                    <img src="{{ 'https://image.tmdb.org/t/p/w300' + sim.poster_path if sim.poster_path else 'https://via.placeholder.com/165x250' }}"
+                        alt="{{ sim.title }}" class="movie-poster" loading="lazy">
                     <div class="movie-hover-overlay">
                         <div class="play-icon">
                             <svg viewBox="0 0 24 24" fill="white">
