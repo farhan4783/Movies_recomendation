@@ -1145,8 +1145,8 @@ footer {
 .footer-social-btn {
     width: 38px;
     height: 38px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -1167,7 +1167,7 @@ footer {
 }
 
 .footer-bottom {
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding-top: 1.5rem;
     text-align: center;
     font-size: 0.82rem;
@@ -1424,6 +1424,7 @@ footer {
 /* ==================== PRINT STYLES ==================== */
 
 @media print {
+
     .sticky-nav,
     .hamburger,
     footer,
@@ -1448,7 +1449,7 @@ footer {
     text-transform: uppercase;
     letter-spacing: 0.04em;
     backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.25);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 2px 8px rgba(0, 207, 200, 0.4);
     pointer-events: none;
 }
@@ -1465,8 +1466,8 @@ footer {
 .mood-tab {
     padding: 0.45rem 1.1rem;
     border-radius: var(--radius-full);
-    border: 1.5px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
     color: var(--text-secondary);
     font-size: 0.85rem;
     font-weight: 600;
@@ -1498,7 +1499,7 @@ footer {
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) rgba(255,255,255,0.05);
+    scrollbar-color: var(--primary-color) rgba(255, 255, 255, 0.05);
 }
 
 .film-strip-scroll::-webkit-scrollbar {
@@ -1534,8 +1535,8 @@ footer {
     position: absolute;
     bottom: 52px;
     left: 8px;
-    background: rgba(0,0,0,0.7);
-    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: var(--text-secondary);
     font-size: 0.6rem;
     font-weight: 700;
@@ -1554,9 +1555,410 @@ footer {
     opacity: 1;
 }
 
-/* ==================== NEW: STAT COUNT UP ==================== */
-
 .count-up {
     display: inline-block;
     transition: all 0.1s;
+}
+
+/* =========================================================== */
+/* ============ PREMIUM UPGRADES — PHASE 2 =================== */
+/* =========================================================== */
+
+/* ---- 1. Card shimmer sweep on hover ---- */
+@keyframes card-shine {
+    0% {
+        transform: translateX(-120%) rotate(30deg);
+    }
+
+    100% {
+        transform: translateX(220%) rotate(30deg);
+    }
+}
+
+.card-shine {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    transform: translateX(-120%) rotate(30deg);
+}
+
+.movie-card:hover .card-shine {
+    opacity: 1;
+    animation: card-shine 0.7s ease forwards;
+}
+
+/* ---- 2. Genre Color Badge Map ---- */
+.genre-badge {
+    display: inline-block;
+    padding: 0.22rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border: 1px solid transparent;
+}
+
+.genre-badge[data-genre="Action"] {
+    background: rgba(229, 9, 20, 0.18);
+    border-color: rgba(229, 9, 20, 0.4);
+    color: #ff6b72;
+}
+
+.genre-badge[data-genre="Comedy"] {
+    background: rgba(245, 197, 24, 0.18);
+    border-color: rgba(245, 197, 24, 0.4);
+    color: #f5c518;
+}
+
+.genre-badge[data-genre="Horror"] {
+    background: rgba(139, 0, 139, 0.18);
+    border-color: rgba(139, 0, 139, 0.4);
+    color: #da77da;
+}
+
+.genre-badge[data-genre="Science Fiction"],
+.genre-badge[data-genre="Sci-Fi"] {
+    background: rgba(0, 207, 200, 0.18);
+    border-color: rgba(0, 207, 200, 0.4);
+    color: #00cfc8;
+}
+
+.genre-badge[data-genre="Romance"] {
+    background: rgba(255, 105, 180, 0.18);
+    border-color: rgba(255, 105, 180, 0.4);
+    color: #ff69b4;
+}
+
+.genre-badge[data-genre="Drama"] {
+    background: rgba(100, 149, 237, 0.18);
+    border-color: rgba(100, 149, 237, 0.4);
+    color: #6495ed;
+}
+
+.genre-badge[data-genre="Thriller"] {
+    background: rgba(255, 140, 0, 0.18);
+    border-color: rgba(255, 140, 0, 0.4);
+    color: #ff8c00;
+}
+
+.genre-badge[data-genre="Animation"] {
+    background: rgba(50, 205, 50, 0.18);
+    border-color: rgba(50, 205, 50, 0.4);
+    color: #32cd32;
+}
+
+.genre-badge[data-genre="Documentary"] {
+    background: rgba(169, 169, 169, 0.18);
+    border-color: rgba(169, 169, 169, 0.4);
+    color: #a9a9a9;
+}
+
+.genre-badge[data-genre="Adventure"] {
+    background: rgba(255, 165, 0, 0.18);
+    border-color: rgba(255, 165, 0, 0.4);
+    color: #ffa500;
+}
+
+.genre-badge[data-genre="Fantasy"] {
+    background: rgba(186, 85, 211, 0.18);
+    border-color: rgba(186, 85, 211, 0.4);
+    color: #ba55d3;
+}
+
+.genre-badge[data-genre="Crime"] {
+    background: rgba(178, 34, 34, 0.18);
+    border-color: rgba(178, 34, 34, 0.4);
+    color: #e05252;
+}
+
+/* ---- 3. "Why Recommended" Reason Tag ---- */
+.rec-reason-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    position: absolute;
+    bottom: 50px;
+    right: 8px;
+    z-index: 4;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+    border: 1px solid transparent;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.movie-card:hover .rec-reason-tag {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.rec-reason-tag.reason-content {
+    background: rgba(0, 207, 200, 0.2);
+    border-color: rgba(0, 207, 200, 0.4);
+    color: #00cfc8;
+}
+
+.rec-reason-tag.reason-collab {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #a855f7;
+}
+
+.rec-reason-tag.reason-popular {
+    background: rgba(229, 9, 20, 0.2);
+    border-color: rgba(229, 9, 20, 0.4);
+    color: #ff6b72;
+}
+
+.rec-reason-tag.reason-serendipity {
+    background: rgba(245, 197, 24, 0.2);
+    border-color: rgba(245, 197, 24, 0.4);
+    color: #f5c518;
+}
+
+/* ---- 4. Upgraded Mood Tab Pills — per-genre gradients ---- */
+@keyframes emoji-pop {
+    0% {
+        transform: scale(1);
+    }
+
+    40% {
+        transform: scale(1.4) rotate(-8deg);
+    }
+
+    70% {
+        transform: scale(0.9) rotate(4deg);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.mood-tab .mood-emoji {
+    display: inline-block;
+}
+
+.mood-tab:hover .mood-emoji,
+.mood-tab.active .mood-emoji {
+    animation: emoji-pop 0.4s ease;
+}
+
+.mood-tab[data-genre="Action"]:hover,
+.mood-tab[data-genre="Action"].active {
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.25), rgba(180, 0, 0, 0.15));
+    border-color: rgba(229, 9, 20, 0.6);
+    color: #ff6b72;
+    box-shadow: 0 4px 14px rgba(229, 9, 20, 0.25);
+    transform: scale(1.05);
+}
+
+.mood-tab[data-genre="Comedy"]:hover,
+.mood-tab[data-genre="Comedy"].active {
+    background: linear-gradient(135deg, rgba(245, 197, 24, 0.2), rgba(200, 160, 0, 0.1));
+    border-color: rgba(245, 197, 24, 0.6);
+    color: #f5c518;
+    box-shadow: 0 4px 14px rgba(245, 197, 24, 0.2);
+    transform: scale(1.05);
+}
+
+.mood-tab[data-genre="Horror"]:hover,
+.mood-tab[data-genre="Horror"].active {
+    background: linear-gradient(135deg, rgba(139, 0, 139, 0.2), rgba(80, 0, 80, 0.15));
+    border-color: rgba(180, 0, 180, 0.5);
+    color: #da77da;
+    box-shadow: 0 4px 14px rgba(139, 0, 139, 0.25);
+    transform: scale(1.05);
+}
+
+.mood-tab[data-genre="Science Fiction"]:hover,
+.mood-tab[data-genre="Science Fiction"].active {
+    background: linear-gradient(135deg, rgba(0, 207, 200, 0.2), rgba(0, 150, 145, 0.1));
+    border-color: rgba(0, 207, 200, 0.5);
+    color: #00cfc8;
+    box-shadow: 0 4px 14px rgba(0, 207, 200, 0.2);
+    transform: scale(1.05);
+}
+
+.mood-tab[data-genre="Romance"]:hover,
+.mood-tab[data-genre="Romance"].active {
+    background: linear-gradient(135deg, rgba(255, 105, 180, 0.2), rgba(200, 60, 140, 0.1));
+    border-color: rgba(255, 105, 180, 0.5);
+    color: #ff69b4;
+    box-shadow: 0 4px 14px rgba(255, 105, 180, 0.2);
+    transform: scale(1.05);
+}
+
+.mood-tab[data-genre="Drama"]:hover,
+.mood-tab[data-genre="Drama"].active {
+    background: linear-gradient(135deg, rgba(100, 149, 237, 0.2), rgba(60, 100, 200, 0.1));
+    border-color: rgba(100, 149, 237, 0.5);
+    color: #6495ed;
+    box-shadow: 0 4px 14px rgba(100, 149, 237, 0.2);
+    transform: scale(1.05);
+}
+
+.mood-tab[data-genre="Thriller"]:hover,
+.mood-tab[data-genre="Thriller"].active {
+    background: linear-gradient(135deg, rgba(255, 140, 0, 0.2), rgba(200, 100, 0, 0.1));
+    border-color: rgba(255, 140, 0, 0.5);
+    color: #ff8c00;
+    box-shadow: 0 4px 14px rgba(255, 140, 0, 0.2);
+    transform: scale(1.05);
+}
+
+.mood-tab[data-genre="Animation"]:hover,
+.mood-tab[data-genre="Animation"].active {
+    background: linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(20, 150, 20, 0.1));
+    border-color: rgba(50, 205, 50, 0.5);
+    color: #32cd32;
+    box-shadow: 0 4px 14px rgba(50, 205, 50, 0.2);
+    transform: scale(1.05);
+}
+
+/* ---- 5. Animated Section Header Underline ---- */
+@keyframes header-reveal {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 100%;
+    }
+}
+
+.section-heading-animated {
+    position: relative;
+    display: inline-block;
+    padding-bottom: 0.35rem;
+}
+
+.section-heading-animated::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 0;
+    background: linear-gradient(90deg, var(--primary-color), var(--teal, #00cfc8), transparent);
+    border-radius: 2px;
+    animation: header-reveal 0.9s cubic-bezier(0.23, 1, 0.32, 1) 0.4s forwards;
+}
+
+/* ---- 6. Circular Cast Avatar Cards ---- */
+.cast-avatar-card {
+    text-align: center;
+    flex-shrink: 0;
+    width: 110px;
+}
+
+.cast-avatar-ring {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    margin: 0 auto 0.65rem;
+    position: relative;
+    padding: 3px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+    transition: all 0.3s ease;
+}
+
+.cast-avatar-ring:hover {
+    background: linear-gradient(135deg, var(--primary-color, #e50914), var(--teal, #00cfc8));
+    transform: scale(1.08);
+    box-shadow: 0 0 20px rgba(229, 9, 20, 0.35);
+}
+
+.cast-avatar-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top;
+    display: block;
+}
+
+.cast-avatar-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cast-avatar-character {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- 7. CSS-only Interactive Star Rating ---- */
+.star-rating-widget {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 0.3rem;
+}
+
+.star-rating-widget input[type="radio"] {
+    display: none;
+}
+
+.star-rating-widget label {
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: color 0.15s, transform 0.15s;
+    line-height: 1;
+}
+
+.star-rating-widget label:hover,
+.star-rating-widget label:hover~label {
+    color: #ffd700;
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+}
+
+.star-rating-widget input[type="radio"]:checked~label {
+    color: #ffd700;
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.5));
+}
+
+/* ---- 8. AI-Similar section header ---- */
+.ai-similar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.ai-similar-badge {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(100, 27, 200, 0.1));
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    color: #a855f7;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.22rem 0.7rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    animation: pulse 3s ease-in-out infinite;
 }

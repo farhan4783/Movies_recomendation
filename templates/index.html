@@ -244,8 +244,11 @@
     <!-- Cinematic Hero Header -->
     <header data-animate="fadeInUp"
         style="position:relative; padding: 5rem 1rem 3rem; text-align:center; overflow:hidden;">
+        <!-- Particle canvas background -->
+        <canvas id="hero-canvas"
+            style="position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
         <div
-            style="position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(229,9,20,0.12) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(245,197,24,0.06) 0%, transparent 60%);">
+            style="position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(229,9,20,0.1) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(245,197,24,0.05) 0%, transparent 60%);">
         </div>
         <div
             style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(229,9,20,0.1);border:1px solid rgba(229,9,20,0.3);border-radius:999px;padding:0.3rem 1rem;font-size:0.8rem;font-weight:600;color:var(--primary-color);margin-bottom:1.5rem;letter-spacing:0.05em;">
@@ -262,14 +265,22 @@
             style="font-size:0.82rem;color:var(--text-tertiary);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:1px;font-weight:600;">
             Quick Mood Pick</p>
         <div class="mood-tabs" id="mood-tabs">
-            <button class="mood-tab" onclick="setMood('Action','Action')">⚡ Action</button>
-            <button class="mood-tab" onclick="setMood('Comedy','Comedy')">😂 Comedy</button>
-            <button class="mood-tab" onclick="setMood('Horror','Horror')">👻 Horror</button>
-            <button class="mood-tab" onclick="setMood('Science Fiction','Sci-Fi')">🚀 Sci-Fi</button>
-            <button class="mood-tab" onclick="setMood('Romance','Romance')">💕 Romance</button>
-            <button class="mood-tab" onclick="setMood('Drama','Drama')">🎭 Drama</button>
-            <button class="mood-tab" onclick="setMood('Thriller','Thriller')">🔪 Thriller</button>
-            <button class="mood-tab" onclick="setMood('Animation','Animation')">✨ Animation</button>
+            <button class="mood-tab" data-genre="Action" onclick="setMood('Action','Action')"><em
+                    class="mood-emoji">⚡</em> Action</button>
+            <button class="mood-tab" data-genre="Comedy" onclick="setMood('Comedy','Comedy')"><em
+                    class="mood-emoji">😂</em> Comedy</button>
+            <button class="mood-tab" data-genre="Horror" onclick="setMood('Horror','Horror')"><em
+                    class="mood-emoji">👻</em> Horror</button>
+            <button class="mood-tab" data-genre="Science Fiction" onclick="setMood('Science Fiction','Sci-Fi')"><em
+                    class="mood-emoji">🚀</em> Sci-Fi</button>
+            <button class="mood-tab" data-genre="Romance" onclick="setMood('Romance','Romance')"><em
+                    class="mood-emoji">💕</em> Romance</button>
+            <button class="mood-tab" data-genre="Drama" onclick="setMood('Drama','Drama')"><em
+                    class="mood-emoji">🎭</em> Drama</button>
+            <button class="mood-tab" data-genre="Thriller" onclick="setMood('Thriller','Thriller')"><em
+                    class="mood-emoji">🔪</em> Thriller</button>
+            <button class="mood-tab" data-genre="Animation" onclick="setMood('Animation','Animation')"><em
+                    class="mood-emoji">✨</em> Animation</button>
         </div>
     </div>
 
@@ -388,12 +399,13 @@
     <section id="results" style="margin-bottom: 4rem;">
         <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;"
             data-animate="fadeInLeft">
-            🎬 Recommended for You
+            🎬 <span class="section-heading-animated">Recommended for You</span>
         </h2>
         <div class="movie-grid">
             {% for movie in recommendations %}
             <div class="movie-card"
                 onclick="window.location.href='{{ url_for('movie_details_by_id', tmdb_id=movie.id) if movie.id else '/movie/' + movie.title|urlencode }}'">
+                <div class="card-shine"></div>
                 <img src="{{ movie.poster_path if movie.poster_path else 'https://via.placeholder.com/200x300?text=No+Image' }}"
                     alt="{{ movie.title }}" class="movie-poster" loading="lazy">
 
@@ -406,22 +418,34 @@
                 </div>
 
                 <!-- Match Score Badge -->
-                <div class="match-badge">{{ (85 + loop.index * 2) if loop.index <= 5 else 85 }}% Match</div>
+                <div class="match-badge">{{ (95 - loop.index * 2) }}% Match</div>
 
-                        {% if movie.watch_providers and movie.watch_providers.flatrate %}
-                        <div class="streaming-indicator">Streaming</div>
-                        {% endif %}
+                <!-- Reason Tag -->
+                {% set reason = movie.get('reason', 'popular') if movie is mapping else 'popular' %}
+                {% if reason == 'content' %}
+                <div class="rec-reason-tag reason-content">🎯 Content Match</div>
+                {% elif reason == 'collab' %}
+                <div class="rec-reason-tag reason-collab">👥 Fans Also Love</div>
+                {% elif reason == 'serendipity' %}
+                <div class="rec-reason-tag reason-serendipity">🎲 Discovery</div>
+                {% else %}
+                <div class="rec-reason-tag reason-popular">🔥 Popular</div>
+                {% endif %}
 
-                        <div class="movie-info">
-                            <h3 class="movie-title">{{ movie.title }}</h3>
-                            <div class="movie-meta">
-                                <span class="rating">⭐ {{ movie.vote_average if movie.vote_average else 'N/A' }}</span>
-                                <span class="year">{{ movie.release_date[:4] if movie.release_date else '' }}</span>
-                            </div>
-                        </div>
+                {% if movie.watch_providers and movie.watch_providers.flatrate %}
+                <div class="streaming-indicator">Streaming</div>
+                {% endif %}
+
+                <div class="movie-info">
+                    <h3 class="movie-title">{{ movie.title }}</h3>
+                    <div class="movie-meta">
+                        <span class="rating">⭐ {{ movie.vote_average if movie.vote_average else 'N/A' }}</span>
+                        <span class="year">{{ movie.release_date[:4] if movie.release_date else '' }}</span>
+                    </div>
                 </div>
-                {% endfor %}
             </div>
+            {% endfor %}
+        </div>
     </section>
     {% endif %}
 
@@ -457,13 +481,14 @@
     <section id="popular">
         <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;"
             data-animate="fadeInLeft">
-            🔥 Trending Now
+            🔥 <span class="section-heading-animated">Trending Now</span>
         </h2>
         <div class="movie-grid">
             {% for movie in popular_movies %}
             <div class="movie-card"
                 onclick="window.location.href='{{ url_for('movie_details_by_id', tmdb_id=movie.id) if movie.id else '/movie/' + movie.title|urlencode }}'"
                 style="position: relative;">
+                <div class="card-shine"></div>
                 <div class="rank-badge {{ 'top3' if loop.index <= 3 else '' }}">{{ loop.index }}</div>
                 <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster" loading="lazy">
 
@@ -483,7 +508,7 @@
                     <h3 class="movie-title">{{ movie.title }}</h3>
                     <div class="movie-meta">
                         <span class="rating">⭐ {{ movie.vote_average }}</span>
-                        <span class="year">{{ movie.release_date[:4] }}</span>
+                        <span class="year">{{ movie.release_date[:4] if movie.release_date else '' }}</span>
                     </div>
                 </div>
             </div>
@@ -663,10 +688,8 @@
 
     // ===== MOOD TABS =====
     function setMood(genreValue, label) {
-        // Set genre select
         const genreSelect = document.querySelector('select[name="genre"]');
         if (genreSelect) {
-            // Find best matching option
             let matched = false;
             for (const opt of genreSelect.options) {
                 if (opt.value.toLowerCase().includes(genreValue.toLowerCase()) ||
@@ -678,13 +701,97 @@
             }
             if (!matched) genreSelect.value = 'All';
         }
-        // Highlight active tab
         document.querySelectorAll('.mood-tab').forEach(tab => tab.classList.remove('active'));
         event.currentTarget.classList.add('active');
-        // Scroll to form
         const form = document.querySelector('.search-section');
         if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
         if (typeof toast !== 'undefined') toast.info(`Mood set to ${label} 🎬`);
+    }
+
+    // ===== CANVAS PARTICLE HERO =====
+    (function initHeroCanvas() {
+        const canvas = document.getElementById('hero-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let W, H;
+
+        function resize() {
+            W = canvas.width = canvas.offsetWidth;
+            H = canvas.height = canvas.offsetHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const particles = Array.from({ length: 80 }, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: Math.random() * 1.4 + 0.3,
+            vx: (Math.random() - 0.5) * 0.18,
+            vy: (Math.random() - 0.5) * 0.18,
+            alpha: Math.random() * 0.5 + 0.1
+        }));
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            for (const p of particles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(229, 9, 20, ${p.alpha})`;
+                ctx.fill();
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > W) p.vx *= -1;
+                if (p.y < 0 || p.y > H) p.vy *= -1;
+            }
+            requestAnimationFrame(draw);
+        }
+        draw();
+    })();
+
+    // ===== FOR YOU REASON TAG HELPER =====
+    function _reasonTag(reason) {
+        const map = {
+            content: '<div class="rec-reason-tag reason-content" style="opacity:1;transform:none;">🎯 Content Match</div>',
+            collab: '<div class="rec-reason-tag reason-collab" style="opacity:1;transform:none;">👥 Fans Also Love</div>',
+            serendipity: '<div class="rec-reason-tag reason-serendipity" style="opacity:1;transform:none;">🎲 Discovery</div>',
+            popular: '<div class="rec-reason-tag reason-popular" style="opacity:1;transform:none;">🔥 Popular</div>'
+        };
+        return map[reason] || map.popular;
+    }
+
+    async function loadForYou() {
+        const grid = document.getElementById('for-you-grid');
+        if (!grid) return;
+        try {
+            const res = await fetch('/api/for-you');
+            const data = await res.json();
+            if (!data.results || data.results.length === 0) {
+                const section = document.getElementById('for-you-section');
+                if (section) section.style.display = 'none';
+                return;
+            }
+            grid.innerHTML = data.results.map(m => {
+                const href = m.id ? `/movie/id/${m.id}` : `/movie/${encodeURIComponent(m.title || '')}`;
+                return `
+                <div class="movie-card" onclick="window.location.href='${href}'">
+                    <div class="card-shine"></div>
+                    <img src="${m.poster_path || ''}" alt="${m.title || ''}" class="movie-poster" loading="lazy"
+                         onerror="this.style.display='none'">
+                    <div class="match-badge">✨ For You</div>
+                    ${_reasonTag(m.reason || 'popular')}
+                    <div class="movie-info">
+                        <h3 class="movie-title">${m.title || ''}</h3>
+                        <div class="movie-meta">
+                            <span class="rating">⭐ ${m.vote_average || 'N/A'}</span>
+                            <span class="year">${(m.release_date || '').slice(0, 4)}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            if (typeof initCardTilt === 'function') initCardTilt('#for-you-grid .movie-card');
+        } catch (e) {
+            const section = document.getElementById('for-you-section');
+            if (section) section.style.display = 'none';
+        }
     }
 </script>
 {% endblock %}

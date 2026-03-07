@@ -8,7 +8,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
-from model.ai_recommender import get_ai_recommendation, get_mood_recommendation, get_user_personality
+from model.ai_recommender import get_ai_recommendation, get_mood_recommendation, get_user_personality, get_ai_similar_explanation
 from utils.tmdb_client import fetch_movie_details, fetch_movie_details_batch, fetch_popular_movies, fetch_full_movie_details, fetch_full_movie_details_by_id, search_movies, fetch_trending_movies
 from model import db
 from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory, ReviewLike
@@ -116,52 +116,58 @@ def explore_page():
                 # If we filter, we need a larger pool
                 candidate_pool_size = 50 if (filter_genre or filter_min_year or filter_min_rating) else 5
 
-                raw_recs = hybrid_model.recommend(
-                    selected_movies, current_user_id, n=candidate_pool_size, movies_df=movies_df
+                raw_recs_with_reasons = hybrid_model.recommend(
+                    selected_movies, current_user_id, n=candidate_pool_size,
+                    movies_df=movies_df, with_reasons=True
                 )
-                
+                # raw_recs_with_reasons is a list of (title, reason) tuples
+                reason_map = {t: r for t, r in raw_recs_with_reasons}
+                raw_recs = [t for t, _ in raw_recs_with_reasons]
+
                 # Apply Filters
                 filtered_recs = []
                 for title in raw_recs:
-                    movie_row = movies_df[movies_df['title'] == title].iloc[0]
-                    
-                    # Check Genre
-                    if filter_genre and filter_genre != "All" and filter_genre not in str(movie_row['genre']):
+                    rows = movies_df[movies_df['title'] == title]
+                    if rows.empty:
                         continue
-                        
+                    movie_row = rows.iloc[0]
+
+                    # Check Genre
+                    if filter_genre and filter_genre != "All" and filter_genre not in str(movie_row.get('genre', '')):
+                        continue
+
                     # Check Year
                     if filter_min_year:
                         try:
                             if int(movie_row['year']) < int(filter_min_year):
                                 continue
                         except:
-                            pass # specific error handling if year is N/A
-                            
+                            pass
+
                     # Check Rating
                     if filter_min_rating:
                         try:
-                            # Use our local avg_rating which we computed
                             if float(movie_row['avg_rating']) < float(filter_min_rating):
                                 continue
                         except:
                             pass
-                            
+
                     filtered_recs.append(title)
-                    if len(filtered_recs) >= 5: # Stop after finding 5 good matches
+                    if len(filtered_recs) >= 5:
                         break
-                
-                # If we filtered too much and got nothing, fallback to top raw results but warn user?
-                # Or just show what we found.
+
                 if not filtered_recs and raw_recs:
-                     error = "No movies matched your strict filters. Showing unmatched recommendations."
-                     filtered_recs = raw_recs[:5]
+                    error = "No movies matched your strict filters. Showing unmatched recommendations."
+                    filtered_recs = raw_recs[:5]
                 elif not filtered_recs:
-                     error = "No recommendations found."
+                    error = "No recommendations found."
 
                 # Fetch details for filtered recommendations — parallel
                 rec_details = fetch_movie_details_batch(filtered_recs)
                 for title, details in zip(filtered_recs, rec_details):
+                    reason = reason_map.get(title, 'popular')
                     if details:
+                        details['reason'] = reason
                         recommendations.append(details)
                     else:
                         rows = movies_df[movies_df['title'] == title]
@@ -170,7 +176,8 @@ def explore_page():
                             "title": title,
                             "poster_path": "https://via.placeholder.com/200x300?text=No+Image",
                             "vote_average": movie_row.get('avg_rating', 'N/A') if movie_row is not None else 'N/A',
-                            "release_date": str(movie_row.get('year', '')) if movie_row is not None else ''
+                            "release_date": str(movie_row.get('year', '')) if movie_row is not None else '',
+                            "reason": reason
                         })
                     
             if not recommendations and not error:
@@ -695,10 +702,18 @@ def api_for_you():
         return jsonify({"results": [], "message": "Watch some movies first to get personalized picks!"})
     
     try:
-        recs = hybrid_model.recommend(seed_titles[:5], current_user.id, n=6, movies_df=movies_df)
+        recs_with_reasons = hybrid_model.recommend(
+            seed_titles[:5], current_user.id, n=6, movies_df=movies_df, with_reasons=True
+        )
+        recs = [t for t, _ in recs_with_reasons]
+        reason_map = {t: r for t, r in recs_with_reasons}
         # Fetch details in parallel
         details_list = fetch_movie_details_batch(recs)
-        results = [d for d in details_list if d]
+        results = []
+        for title, d in zip(recs, details_list):
+            if d:
+                d['reason'] = reason_map.get(title, 'popular')
+                results.append(d)
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"results": [], "error": str(e)})
@@ -760,6 +775,43 @@ def api_discover_by_genre():
         return jsonify({"results": movies, "genre": genre_name, "genre_id": genre_id})
     except Exception as e:
         app.logger.error(f"Discover by genre error: {e}")
+        return jsonify({"results": [], "error": str(e)})
+
+
+# ===== AI Similar Movies =====
+@app.route("/api/similar/<int:tmdb_id>")
+def api_similar_movies(tmdb_id):
+    """Real-time content-based similar movies for a given TMDB ID."""
+    if movies_df.empty or content_model is None:
+        return jsonify({"results": []})
+
+    # Look up the movie title by tmdb_id
+    title = None
+    try:
+        from utils.tmdb_client import fetch_movie_details_by_id_simple
+        info = fetch_full_movie_details_by_id(tmdb_id)
+        if info:
+            title = info.get('title')
+    except Exception:
+        pass
+
+    if not title:
+        return jsonify({"results": []})
+
+    try:
+        similar_titles = content_model.recommend([title], n=8)
+        if not similar_titles:
+            return jsonify({"results": []})
+
+        details_list = fetch_movie_details_batch(similar_titles)
+        results = []
+        for t, d in zip(similar_titles, details_list):
+            if d:
+                results.append(d)
+
+        return jsonify({"results": results, "seed": title})
+    except Exception as e:
+        app.logger.error(f"Similar movies error: {e}")
         return jsonify({"results": [], "error": str(e)})
 
 

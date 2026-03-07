@@ -170,34 +170,25 @@
         <!-- Cast Section -->
         {% if movie.cast %}
         <section class="cast-section" style="margin-bottom: 4rem;">
-            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">Top Cast
+            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">
+                <span class="section-heading-animated">Top Cast</span>
             </h2>
             <div class="cast-grid" style="
                 display: flex;
                 overflow-x: auto;
-                gap: 1.25rem;
+                gap: 1.5rem;
                 padding-bottom: 1.5rem;
                 scrollbar-width: thin;
                 scrollbar-color: var(--primary-color) #222;
             ">
                 {% for actor in movie.cast %}
-                <div class="cast-card glass-panel"
-                    style="min-width: 140px; width: 140px; overflow: hidden; flex-shrink: 0; text-align: center; padding-bottom: 0.75rem;">
-                    <div style="overflow: hidden;">
-                        <img src="{{ actor.profile_path or 'https://via.placeholder.com/140x200?text=?' }}"
-                            alt="{{ actor.name }}"
-                            style="width: 100%; height: 175px; object-fit: cover; object-position: top; transition: transform 0.3s;"
-                            onmouseover="this.style.transform='scale(1.06)'"
-                            onmouseout="this.style.transform='scale(1)'">
+                <div class="cast-avatar-card">
+                    <div class="cast-avatar-ring">
+                        <img src="{{ actor.profile_path or 'https://ui-avatars.com/api/?name=' + actor.name|urlencode + '&background=1a1a1a&color=888&size=200' }}"
+                            alt="{{ actor.name }}">
                     </div>
-                    <div class="cast-info" style="padding: 0.75rem 0.6rem 0;">
-                        <p class="actor-name"
-                            style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.2rem; line-height: 1.3;">{{
-                            actor.name }}</p>
-                        <p class="character-name"
-                            style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">{{
-                            actor.character }}</p>
-                    </div>
+                    <div class="cast-avatar-name">{{ actor.name }}</div>
+                    <div class="cast-avatar-character">{{ actor.character }}</div>
                 </div>
                 {% endfor %}
             </div>
@@ -339,17 +330,24 @@
 
             {% if current_user.is_authenticated %}
             <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem;">
-                <h3 style="margin-bottom: 1rem;">Leave a Review</h3>
+                <h3 style="margin-bottom: 1.25rem;">Leave a Review</h3>
                 <form id="review-form" onsubmit="submitReview(event)">
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem;">Rating</label>
-                        <div class="star-rating"
-                            style="display: flex; gap: 0.5rem; font-size: 1.5rem; cursor: pointer;">
-                            <span onclick="setRating(1)">★</span>
-                            <span onclick="setRating(2)">★</span>
-                            <span onclick="setRating(3)">★</span>
-                            <span onclick="setRating(4)">★</span>
-                            <span onclick="setRating(5)">★</span>
+                    <div style="margin-bottom: 1.25rem;">
+                        <label
+                            style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);">Your
+                            Rating</label>
+                        <!-- CSS-only interactive star rating -->
+                        <div class="star-rating-widget" id="star-widget">
+                            <input type="radio" id="star5" name="star-rating" value="5">
+                            <label for="star5" title="5 stars">★</label>
+                            <input type="radio" id="star4" name="star-rating" value="4">
+                            <label for="star4" title="4 stars">★</label>
+                            <input type="radio" id="star3" name="star-rating" value="3">
+                            <label for="star3" title="3 stars">★</label>
+                            <input type="radio" id="star2" name="star-rating" value="2">
+                            <label for="star2" title="2 stars">★</label>
+                            <input type="radio" id="star1" name="star-rating" value="1">
+                            <label for="star1" title="1 star">★</label>
                         </div>
                         <input type="hidden" name="rating" id="rating-input" required>
                     </div>
@@ -430,7 +428,8 @@
         {% if movie.similar %}
         <section class="similar-section" style="margin-bottom: 4rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-                <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin:0;">You May Also Like
+                <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin:0;">
+                    <span class="section-heading-animated">You May Also Like</span>
                 </h2>
                 <span style="font-size:0.8rem;color:var(--text-tertiary);">← Scroll →</span>
             </div>
@@ -438,6 +437,7 @@
                 {% for sim in movie.similar %}
                 <div class="movie-card"
                     onclick="window.location.href='{{ url_for('movie_details_by_id', tmdb_id=sim.id) if sim.id else '/movie/' + (sim.title|urlencode) }}'">
+                    <div class="card-shine"></div>
                     <img src="{{ 'https://image.tmdb.org/t/p/w300' + sim.poster_path if sim.poster_path else 'https://via.placeholder.com/165x250' }}"
                         alt="{{ sim.title }}" class="movie-poster" loading="lazy">
                     <div class="movie-hover-overlay">
@@ -454,6 +454,26 @@
                             <span class="year">{{ sim.release_date[:4] if sim.release_date else '' }}</span>
                         </div>
                     </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- AI-Recommended Similar Movies (loaded via JS) -->
+        {% if movie.id %}
+        <section id="ai-similar-section" style="margin-bottom: 4rem; display:none;">
+            <div class="ai-similar-header">
+                <h2 style="border-left: 4px solid #a855f7; padding-left: 1rem; margin:0;">
+                    <span class="section-heading-animated" style="--heading-color:#a855f7;">AI-Recommended
+                        Similar</span>
+                </h2>
+                <span class="ai-similar-badge">🤖 Powered by ML</span>
+            </div>
+            <div class="film-strip-scroll" id="ai-similar-scroll">
+                {% for i in range(6) %}
+                <div class="movie-card"
+                    style="background:rgba(255,255,255,0.04);aspect-ratio:2/3;animation:pulse 1.5s ease-in-out infinite alternate;flex-shrink:0;width:165px;">
                 </div>
                 {% endfor %}
             </div>
@@ -607,5 +627,61 @@
             }
         } catch (err) { console.error(err); }
     }
+    // ===== STAR RATING WIDGET SYNC =====
+    // The CSS-only widget uses radio inputs. We sync the selected value to the hidden input.
+    document.querySelectorAll('.star-rating-widget input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const ratingInput = document.getElementById('rating-input');
+            if (ratingInput) {
+                ratingInput.value = this.value;
+                currentRating = parseFloat(this.value);
+            }
+        });
+    });
+
+    // ===== AI-SIMILAR MOVIES LOADER =====
+    (async function loadAiSimilar() {
+        const section = document.getElementById('ai-similar-section');
+        const scroll = document.getElementById('ai-similar-scroll');
+        if (!section || !scroll) return;
+
+        const tmdbId = {{ movie.id | default (0) | int
+    }};
+    if (!tmdbId) return;
+
+    try {
+        const res = await fetch(`/api/similar/${tmdbId}`);
+        const data = await res.json();
+        if (!data.results || data.results.length === 0) return;
+
+        scroll.innerHTML = data.results.map(m => {
+            const href = m.id ? `/movie/id/${m.id}` : `/movie/${encodeURIComponent(m.title || '')}`;
+            const poster = m.poster_path || 'https://via.placeholder.com/165x250?text=No+Poster';
+            return `
+                <div class="movie-card" onclick="window.location.href='${href}'">
+                    <div class="card-shine"></div>
+                    <img src="${poster}" alt="${m.title || ''}" class="movie-poster" loading="lazy"
+                         onerror="this.src='https://via.placeholder.com/165x250?text=No+Poster'">
+                    <div class="movie-hover-overlay">
+                        <div class="play-icon">
+                            <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                        </div>
+                    </div>
+                    <div class="rec-reason-tag reason-content" style="opacity:1;transform:none;">🎯 ML Match</div>
+                    <div class="movie-info">
+                        <h3 class="movie-title">${m.title || ''}</h3>
+                        <div class="movie-meta">
+                            <span class="rating">⭐ ${m.vote_average || 'N/A'}</span>
+                            <span class="year">${(m.release_date || '').slice(0, 4)}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        section.style.display = 'block';
+    } catch (e) {
+        console.warn('AI similar movies failed:', e);
+    }
+    }) ();
 </script>
 {% endblock %}

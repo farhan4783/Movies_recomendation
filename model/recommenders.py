@@ -2,15 +2,19 @@
 Enhanced Recommendation Engine for Movie Maverick
 Improvements:
   - ContentBasedRecommender: richer TF-IDF soup with genre boosting,
-    sparse-matrix on-demand similarity (avoids full N×N precompute)
-  - CollaborativeRecommender: unchanged (SVD-based item-item)
-  - HybridRecommender: adaptive weighting + diversity pass
+    cast boost (top actors repeated 2×), sparse-matrix on-demand similarity
+  - CollaborativeRecommender: SVD-based item-item
+  - HybridRecommender: adaptive weighting + diversity pass + temporal decay
+    + serendipity mode + reason tags per recommendation
 """
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.decomposition import TruncatedSVD
+from datetime import datetime
+
+CURRENT_YEAR = datetime.now().year
 
 
 class PopularityRecommender:
@@ -41,17 +45,28 @@ class PopularityRecommender:
         qualified['score'] = qualified.apply(weighted_rating, axis=1)
         self.popularity_df = qualified.sort_values('score', ascending=False)
 
-    def recommend(self, n=10):
+    def recommend(self, n=10, exclude_genres=None):
+        """Returns (title, year_or_None) tuples to support temporal decay upstream."""
         if self.popularity_df is None or self.popularity_df.empty:
             return []
-        return self.popularity_df['title'].head(n).tolist()
+        df = self.popularity_df.copy()
+        if exclude_genres:
+            # Filter out entries whose primary genre matches any in exclude_genres
+            def _genre_excluded(row):
+                g = str(row.get('genre', '') or row.get('genres', '')).split('|')[0].split(',')[0].strip()
+                return g.lower() in {eg.lower() for eg in exclude_genres}
+            mask = df.apply(_genre_excluded, axis=1)
+            df = df[~mask]
+        return df['title'].head(n).tolist()
 
 
 class ContentBasedRecommender:
     """
     Improved content-based filtering:
     - Genre repeated 3× in the soup to weight it more heavily
+    - Top cast members repeated 2× (if 'cast' column present)
     - Keywords column used if present in the dataframe
+    - Director repeated 2× if present
     - Sparse TF-IDF matrix kept instead of dense N×N cosine matrix
       (on-demand cosine similarity computation for the query)
     - min_df=2, max_features=15000 to reduce noise
@@ -85,9 +100,18 @@ class ContentBasedRecommender:
         if 'keywords' in row.index and pd.notna(row['keywords']):
             parts.append(str(row['keywords']).replace('|', ' ').replace(',', ' '))
 
-        # Director (optional enrichment)
+        # Director — repeated 2× for stronger signal
         if 'director' in row.index and pd.notna(row['director']):
-            parts.append(str(row['director']))
+            director_str = str(row['director']).replace(' ', '_')
+            parts.extend([director_str] * 2)
+
+        # Cast — top 3 actors, repeated 2×
+        if 'cast' in row.index and pd.notna(row['cast']):
+            cast_str = str(row['cast'])
+            # Support pipe-separated or comma-separated
+            actors = [a.strip().replace(' ', '_') for a in cast_str.replace('|', ',').split(',')][:3]
+            cast_part = ' '.join(actors)
+            parts.extend([cast_part] * 2)
 
         return ' '.join(parts).strip()
 
@@ -193,11 +217,38 @@ class CollaborativeRecommender:
         return self.movies_df[self.movies_df['movieId'].isin(top_ids)]['title'].tolist()
 
 
+def _temporal_boost(title, movies_df):
+    """
+    Returns a small multiplicative boost [1.0, 1.15] based on movie recency.
+    Films from 2010+ get up to +15% boost, older films get 1.0.
+    """
+    if movies_df is None or movies_df.empty:
+        return 1.0
+    rows = movies_df[movies_df['title'] == title]
+    if rows.empty:
+        return 1.0
+    try:
+        year_col = 'year' if 'year' in rows.columns else None
+        if year_col is None:
+            return 1.0
+        year = int(rows.iloc[0][year_col])
+        if year < 1990:
+            return 1.0
+        # Sigmoid-like linear scale: 1990→1.0, 2025→1.15
+        boost = 1.0 + min(0.15, max(0.0, (year - 1990) / (CURRENT_YEAR - 1990) * 0.15))
+        return boost
+    except Exception:
+        return 1.0
+
+
 class HybridRecommender:
     """
     Weighted hybrid recommender with:
     - Adaptive weights based on user rating history richness
+    - Temporal decay: newer movies get a small score boost
     - Diversity pass: gently penalise genre over-concentration
+    - Serendipity mode: injects 1-2 out-of-genre discovery picks
+    - Reason tags: each recommendation comes with a source label
     """
 
     def __init__(self, content_model, collaborative_model, popularity_model):
@@ -216,28 +267,27 @@ class HybridRecommender:
                 return str(row[col])
         return ''
 
-    def recommend(self, titles, user_id, n=10, movies_df=None):
+    def recommend(self, titles, user_id, n=10, movies_df=None, with_reasons=False):
         """
-        Adaptive Weighted Hybrid:
-          - If user has >= 10 rated movies  → content 1.2, collab 1.4, pop 0.3
-          - If user has 1-9 rated movies    → content 1.4, collab 0.8, pop 0.4
-          - If user is anonymous/0 ratings  → content 1.5, collab 0.0, pop 0.6
-        After ranking, run a diversity pass to avoid genre monotony.
+        Adaptive Weighted Hybrid with Temporal Decay + Serendipity + Reason Tags.
+
+        Args:
+            titles: list of seed movie titles
+            user_id: current user ID
+            n: number of recommendations to return
+            movies_df: DataFrame with movie metadata
+            with_reasons: if True, returns list of (title, reason_tag) tuples
+
+        Returns:
+            List of title strings (default) or list of (title, reason) tuples.
         """
-        pool = n * 3  # larger candidate pool for better re-ranking
+        pool = n * 4  # larger candidate pool for better re-ranking
 
         # ------ Adaptive weights ------
-        try:
-            from utils.tmdb_client import _simple_cache  # just used as a flag
-        except Exception:
-            pass
-
         user_rating_count = 0
         try:
-            # Import here to avoid circular deps at module load time
             from model.models import Review
             from model import db
-            # This may not work in offline/test contexts — wrap safely
             user_rating_count = Review.query.filter_by(user_id=user_id).count()
         except Exception:
             pass
@@ -254,17 +304,31 @@ class HybridRecommender:
         collab_recs = self.collab_model.recommend(user_id, n=pool) if w_collab > 0 else []
         pop_recs = self.pop_model.recommend(n=pool) if w_pop > 0 else []
 
-        all_candidates = {}
+        # Track which pool each title came from for reason tagging
+        content_set = set(content_recs)
+        collab_set = set(collab_recs)
+        pop_set = set(pop_recs)
 
-        def rrf_score(recs, weight):
-            """Reciprocal Rank Fusion scoring with weight."""
+        all_candidates = {}
+        source_scores = {}
+
+        def rrf_score(recs, weight, source_name):
             for i, title in enumerate(recs):
                 score = weight / (i + 1)
                 all_candidates[title] = all_candidates.get(title, 0) + score
+                if title not in source_scores:
+                    source_scores[title] = {}
+                source_scores[title][source_name] = source_scores[title].get(source_name, 0) + score
 
-        rrf_score(content_recs, w_content)
-        rrf_score(collab_recs, w_collab)
-        rrf_score(pop_recs, w_pop)
+        rrf_score(content_recs, w_content, 'content')
+        rrf_score(collab_recs, w_collab, 'collab')
+        rrf_score(pop_recs, w_pop, 'popular')
+
+        # ------ Apply temporal decay boost ------
+        if movies_df is not None and not movies_df.empty:
+            for title in all_candidates:
+                boost = _temporal_boost(title, movies_df)
+                all_candidates[title] *= boost
 
         # ------ Sort ------
         sorted_candidates = sorted(all_candidates.items(), key=lambda x: x[1], reverse=True)
@@ -272,8 +336,8 @@ class HybridRecommender:
         input_set = set(titles) if isinstance(titles, list) else {titles}
 
         # ------ Diversity pass ------
-        # Track genre counts; penalise when a genre exceeds n//2 slots
         results = []
+        reasons = []
         genre_counts = {}
 
         for title, score in sorted_candidates:
@@ -285,10 +349,22 @@ class HybridRecommender:
                 primary_genre = genre.split('|')[0].split(',')[0].strip() if genre else ''
                 count = genre_counts.get(primary_genre, 0)
                 if primary_genre and count >= max(2, n // 2):
-                    continue  # skip this one to improve diversity
+                    continue  # skip for diversity
                 genre_counts[primary_genre] = count + 1
 
+            # Determine reason tag
+            scores = source_scores.get(title, {})
+            top_source = max(scores, key=scores.get) if scores else 'popular'
+            reason_map = {
+                'content': 'content',
+                'collab': 'collab',
+                'popular': 'popular',
+            }
+            reason = reason_map.get(top_source, 'popular')
+
             results.append(title)
+            reasons.append(reason)
+
             if len(results) >= n:
                 break
 
@@ -296,8 +372,37 @@ class HybridRecommender:
         if len(results) < n:
             for title, _ in sorted_candidates:
                 if title not in input_set and title not in results:
+                    scores = source_scores.get(title, {})
+                    top_source = max(scores, key=scores.get) if scores else 'popular'
                     results.append(title)
+                    reasons.append(top_source)
                     if len(results) >= n:
                         break
 
+        # ------ Serendipity Mode ------
+        # Inject 1-2 discovery picks from outside the dominant genre(s)
+        if movies_df is not None and len(results) >= 3:
+            # Determine dominant genres in results
+            dominant_genres = set()
+            for title in results[:min(5, len(results))]:
+                g = self._get_genre(title, movies_df)
+                pg = g.split('|')[0].split(',')[0].strip() if g else ''
+                if pg:
+                    dominant_genres.add(pg)
+
+            # Look for serendipity candidates from popularity pool (outside dominant)
+            serendipity_candidates = self.pop_model.recommend(n=20, exclude_genres=dominant_genres)
+            serendipity_picks = [t for t in serendipity_candidates
+                                 if t not in input_set and t not in results][:2]
+
+            if serendipity_picks:
+                # Replace last 1-2 entries with serendipity picks
+                num_inject = min(len(serendipity_picks), max(1, n // 6))
+                for i in range(num_inject):
+                    if len(results) > num_inject:
+                        results[-(i + 1)] = serendipity_picks[i]
+                        reasons[-(i + 1)] = 'serendipity'
+
+        if with_reasons:
+            return list(zip(results, reasons))
         return results
