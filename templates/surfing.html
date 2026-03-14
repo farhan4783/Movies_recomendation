@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Surfing - Movie Maverick{% endblock %}
+
+{% block head %}
+<style>
+    body {
+        overflow: hidden; /* Prevent scrolling during surfing */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="surfing-container">
+    <div
+        style="position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(229,9,20,0.1) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(245,197,24,0.05) 0%, transparent 60%); opacity:0.6;">
+    </div>
+
+    <div style="text-align: center; margin-bottom: 2rem; position: relative; z-index: 20;">
+        <h1 class="text-gradient" style="font-size: 2.5rem; margin-bottom: 0.5rem;">Movie Surfing</h1>
+        <p style="color: var(--text-secondary);">Swipe right to save, left to skip. Ride the movie wave!</p>
+    </div>
+
+    <div class="surfing-card-presenter" id="card-presenter">
+        <!-- Cards will be injected here by JS -->
+        <div id="loading-surfing" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+            <div class="spinner spinner-lg"></div>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">Catching waves of data...</p>
+        </div>
+    </div>
+
+    <div class="surfing-actions">
+        <button class="action-btn dislike" onclick="swipe('left')" title="Skip (Left Arrow)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <button class="action-btn watchlist" onclick="addToWatchlist()" title="Add to Watchlist (Space)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </button>
+        <button class="action-btn like" onclick="swipe('right')" title="Love it! (Right Arrow)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let movies = [];
+    let currentIndex = 0;
+    const presenter = document.getElementById('card-presenter');
+    const loading = document.getElementById('loading-surfing');
+
+    async function loadSurfingMovies() {
+        try {
+            // Fetch trending movies for surfing
+            const res = await fetch('/api/trending?window=day');
+            const data = await res.json();
+            movies = data.results || [];
+            
+            // If authenticated, also fetch "for you"
+            {% if current_user.is_authenticated %}
+            const forYouRes = await fetch('/api/for-you');
+            const forYouData = await forYouRes.json();
+            if (forYouData.results) {
+                movies = [...forYouData.results, ...movies];
+            }
+            {% endif %}
+
+            // Shuffle movies
+            movies = movies.sort(() => Math.random() - 0.5);
+
+            if (movies.length > 0) {
+                loading.style.display = 'none';
+                renderNextCard();
+            } else {
+                loading.innerHTML = '<p>No more waves today. Try again later!</p>';
+            }
+        } catch (e) {
+            loading.innerHTML = '<p>Error catching waves. Please refresh.</p>';
+        }
+    }
+
+    function createCard(movie) {
+        const card = document.createElement('div');
+        card.className = 'surfing-card';
+        card.innerHTML = `
+            <div class="card-shine"></div>
+            <img src="${movie.poster_path || 'https://via.placeholder.com/400x600?text=No+Movie+Wave'}" alt="${movie.title}" class="surfing-poster">
+            <div class="surfing-details">
+                <h2 class="surfing-title">${movie.title}</h2>
+                <div class="surfing-meta">
+                    <span>⭐ ${movie.vote_average || 'N/A'}</span>
+                    <span>📅 ${movie.release_date ? movie.release_date.substring(0, 4) : 'N/A'}</span>
+                </div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    ${movie.reason ? `<span class="ai-similar-badge" style="background:rgba(229,9,20,0.1); border-color:rgba(229,9,20,0.3); color:var(--primary-color);">✨ ${movie.reason}</span>` : ''}
+                </div>
+            </div>
+        `;
+
+        // Touch/Mouse Swiping Logic
+        let startX = 0;
+        let isDragging = false;
+
+        card.addEventListener('mousedown', (e) => {
+            startX = e.clientX;
+            isDragging = true;
+            card.style.transition = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const x = e.clientX - startX;
+            const rotation = x / 10;
+            card.style.transform = `translateX(${x}px) rotate(${rotation}deg)`;
+            
+            // Color overlay based on direction
+            if (x > 50) card.style.boxShadow = `0 0 40px rgba(46, 204, 113, ${Math.min(x/200, 0.4)})`;
+            else if (x < -50) card.style.boxShadow = `0 0 40px rgba(255, 62, 78, ${Math.min(-x/200, 0.4)})`;
+            else card.style.boxShadow = 'var(--shadow-2xl)';
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            const x = e.clientX - startX;
+            card.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            
+            if (x > 150) {
+                swipe('right');
+            } else if (x < -150) {
+                swipe('left');
+            } else {
+                card.style.transform = 'translateX(0) rotate(0)';
+                card.style.boxShadow = 'var(--shadow-2xl)';
+            }
+        });
+
+        // Touch events
+        card.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+            card.style.transition = 'none';
+        });
+
+        card.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const x = e.touches[0].clientX - startX;
+            const rotation = x / 10;
+            card.style.transform = `translateX(${x}px) rotate(${rotation}deg)`;
+        });
+
+        card.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            const x = e.changedTouches[0].clientX - startX;
+            card.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            if (x > 100) swipe('right');
+            else if (x < -100) swipe('left');
+            else card.style.transform = 'translateX(0) rotate(0)';
+        });
+
+        return card;
+    }
+
+    let currentCard = null;
+
+    function renderNextCard() {
+        if (currentIndex >= movies.length) {
+            presenter.innerHTML = '<div style="text-align:center; padding:2rem;"><h2 style="font-size:3rem;">🌊</h2><p>You\'ve surfed all the movies! Come back later for new waves.</p><button class="primary-btn" onclick="location.reload()" style="margin-top:1rem;">Restart Session</button></div>';
+            return;
+        }
+
+        const movie = movies[currentIndex];
+        currentCard = createCard(movie);
+        presenter.appendChild(currentCard);
+        
+        // Secondary card behind for depth
+        if (currentIndex + 1 < movies.length) {
+            const nextMovie = movies[currentIndex + 1];
+            const nextCard = createCard(nextMovie);
+            nextCard.style.transform = 'scale(0.9) translateY(20px)';
+            nextCard.style.opacity = '0.5';
+            nextCard.style.zIndex = '5';
+            nextCard.style.pointerEvents = 'none';
+            presenter.insertBefore(nextCard, currentCard);
+        }
+    }
+
+    function swipe(direction) {
+        if (!currentCard) return;
+
+        const x = direction === 'right' ? 1000 : -1000;
+        currentCard.style.transform = `translateX(${x}px) rotate(${x/10}deg)`;
+        currentCard.style.opacity = '0';
+
+        if (direction === 'right') {
+            // "Like" action or similar
+            if (typeof toast !== 'undefined') toast.success(`Liked "${movies[currentIndex].title}"`);
+        }
+
+        setTimeout(() => {
+            currentCard.remove();
+            currentIndex++;
+            renderNextCard();
+        }, 300);
+    }
+
+    async function addToWatchlist() {
+        {% if not current_user.is_authenticated %}
+            if (typeof toast !== 'undefined') toast.warning('Please login to use watchlist!');
+            return;
+        {% endif %}
+
+        const movie = movies[currentIndex];
+        try {
+            const res = await fetch('/api/watchlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: movie.title,
+                    poster_path: movie.poster_path,
+                    id: movie.id
+                })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                if (data.action === 'added') {
+                    if (typeof toast !== 'undefined') toast.success(`Added "${movie.title}" to Watchlist 🍿`);
+                    // Confetti!
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.8 },
+                        colors: ['#e50914', '#ffffff', '#f5c518']
+                    });
+                }
+                swipe('right');
+            }
+        } catch (e) {
+            if (typeof toast !== 'undefined') toast.error('Failed to add to watchlist');
+        }
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') swipe('left');
+        if (e.key === 'ArrowRight') swipe('right');
+        if (e.key === ' ') {
+            e.preventDefault();
+            addToWatchlist();
+        }
+    });
+
+    // Start
+    loadSurfingMovies();
+</script>
+{% endblock %}

@@ -815,5 +815,38 @@ def api_similar_movies(tmdb_id):
         return jsonify({"results": [], "error": str(e)})
 
 
+# ===== NEW FEATURE: Surfing Page =====
+@app.route("/surfing")
+def surfing_page():
+    """Immersive movie discovery page."""
+    return render_template("surfing.html", user=current_user)
+
+
+# ===== NEW: Random Suggestion API =====
+@app.route("/api/random-suggestion")
+def api_random_suggestion():
+    """Returns a random high-rated movie for the 'Surprise Me' feature."""
+    if movies_df.empty:
+        return jsonify({"error": "No movies available"}), 404
+        
+    try:
+        # Filter for high-rated movies if possible
+        high_rated = movies_df[movies_df['avg_rating'] >= 4.0] if 'avg_rating' in movies_df.columns else movies_df
+        if high_rated.empty:
+            high_rated = movies_df
+            
+        random_movie = high_rated.sample(n=1).iloc[0]
+        title = random_movie['title']
+        
+        details = fetch_full_movie_details(title)
+        if not details:
+            # Fallback to a simpler fetch if full details fail
+            details = {"title": title, "poster_path": "", "vote_average": "N/A"}
+            
+        return jsonify(details)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)
