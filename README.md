@@ -2,7 +2,11 @@
 
 A comprehensive, enterprise-grade movie recommendation system with AI-powered suggestions, social features, and advanced analytics. Built with Flask, PostgreSQL, Redis, and modern ML techniques.
 
-| ![Visitors](https://api.visitorbadge.io/api/visitors?path=yourusername/Movies_recomendation&label=VISITS&labelColor=%23ff0000&style=flat&color=%23000000) |
+<div align="center">
+
+![Visitors](https://api.visitorbadge.io/api/visitors?path=farhan4783/Movies_recomendation&label=VISITS&labelColor=%23ff0000&style=flat&color=%23000000)
+
+</div>
 
 ![Movie Maverick](image.png)
 
