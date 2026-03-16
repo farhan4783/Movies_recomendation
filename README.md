@@ -4,6 +4,8 @@ A comprehensive, enterprise-grade movie recommendation system with AI-powered su
 
 ![Movie Maverick](image.png)
 
+![Visitors](https://hitcounter.io/badge.svg?url=https%3A%2F%2Fgithub.com%2FFarazKhan1%2FMovies_recomendation&title=Visitors)
+
 ## ✨ Features
 
 ### 🎯 Core Functionality
