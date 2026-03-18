@@ -42,3 +42,8 @@ templates/movie_details.html
 )
 
 Updated the generic Top Cast avatar cards in the Movie Details page into clickable anchor links smoothly navigating the user to the new profile pages.
+
+in referencce to our model which is not being excepted in github what the problem is the i dont understand
+
+
+but for sure i will find it out very soon
