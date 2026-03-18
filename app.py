@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from model.recommenders import PopularityRecommender, ContentBasedRecommender, CollaborativeRecommender, HybridRecommender
 from model.ai_recommender import get_ai_recommendation, get_mood_recommendation, get_user_personality, get_ai_similar_explanation
-from utils.tmdb_client import fetch_movie_details, fetch_movie_details_batch, fetch_popular_movies, fetch_full_movie_details, fetch_full_movie_details_by_id, search_movies, fetch_trending_movies
+from utils.tmdb_client import fetch_movie_details, fetch_movie_details_batch, fetch_popular_movies, fetch_full_movie_details, fetch_full_movie_details_by_id, search_movies, fetch_trending_movies, fetch_person_details
 from model import db
 from model.models import User, Watchlist, Review, MovieList, ListItem, ViewingHistory, ReviewLike
 from utils.achievements import initialize_achievements, check_and_award_achievements, get_achievement_progress
@@ -338,6 +338,15 @@ def movie_details(title):
         return render_template("404.html", user=current_user), 404
 
     return _render_movie_details(details)
+
+
+@app.route("/person/<int:person_id>")
+def person_details(person_id):
+    """Fetch and display person (actor/director) details."""
+    details = fetch_person_details(person_id)
+    if not details:
+        return render_template("404.html", user=current_user), 404
+    return render_template("person.html", person=details, user=current_user)
 
 
 def _render_movie_details(details):

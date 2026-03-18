@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} - Movie Maverick{% endblock %}
+
+{% block content %}
+<div class="person-page">
+    <div class="container main-content" style="padding-top: 3rem; margin-top: -2rem;">
+        
+        <!-- Back Button -->
+        <button onclick="history.back()" style="
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: white;
+            padding: 0.5rem 1.1rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.2s;
+        " onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+            ← Back
+        </button>
+
+        <div class="person-header" style="display: flex; gap: 3rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: 4rem;">
+            <!-- Profile Image -->
+            <div class="profile-wrapper" style="flex-shrink: 0;">
+                <img src="{{ person.profile_path or 'https://ui-avatars.com/api/?name=' + person.name|urlencode + '&background=1a1a1a&color=888&size=300' }}" alt="{{ person.name }}"
+                    style="
+                    width: 300px;
+                    border-radius: 16px;
+                    box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+                ">
+            </div>
+
+            <!-- Bio Info -->
+            <div class="person-details-text" style="flex: 1; min-width: 300px;">
+                <h1 style="font-size: clamp(2rem, 4vw, 3.5rem); margin-bottom: 0.5rem; line-height: 1.1; font-weight: 800; color: var(--text-primary);">
+                    {{ person.name }}
+                </h1>
+                
+                <div class="meta-tags" style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <span class="genre-tag" style="
+                        background: rgba(229, 9, 20, 0.15);
+                        color: var(--primary-color);
+                        padding: 0.35rem 0.9rem;
+                        border-radius: 8px;
+                        border: 1px solid rgba(229, 9, 20, 0.35);
+                        font-weight: 700;
+                        font-size: 0.9rem;
+                    ">{{ person.known_for_department or 'Acting' }}</span>
+
+                    {% if person.birthday %}
+                    <span style="color: #aaa; font-size: 0.95rem;">🎂 Born: {{ person.birthday }}</span>
+                    {% endif %}
+                    
+                    {% if person.place_of_birth %}
+                    <span style="color: #aaa; font-size: 0.95rem;">📍 {{ person.place_of_birth }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="overview-section" style="margin-bottom: 2rem;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 0.5rem; font-size: 1.2rem;">Biography</h3>
+                    <div class="overview" style="font-size: 1.05rem; line-height: 1.7; color: #ddd; max-width: 850px;">
+                        {% if person.biography %}
+                            <p style="white-space: pre-wrap; font-size: 1rem; color: #ccc;">{{ person.biography }}</p>
+                        {% else %}
+                            <p style="font-style: italic; color: #777;">No biography available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Known For Movies -->
+        {% if person.known_for %}
+        <section class="known-for-section" style="margin-bottom: 4rem;">
+            <h2 style="border-left: 4px solid var(--primary-color); padding-left: 1rem; margin-bottom: 2rem;">
+                <span class="section-heading-animated">Known For</span>
+            </h2>
+            
+            <div class="movies-grid" style="
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 1.5rem;
+            ">
+                {% for movie in person.known_for %}
+                <div class="movie-card" onclick="window.location.href='{% if movie.media_type == 'movie' or not movie.media_type %}{{ url_for('movie_details_by_id', tmdb_id=movie.id) }}{% else %}#{% endif %}'" style="cursor: pointer;">
+                    <div class="card-shine"></div>
+                    <img src="{{ movie.poster_path or 'https://via.placeholder.com/180x270?text=No+Poster' }}" 
+                         alt="{{ movie.title }}" class="movie-poster" loading="lazy">
+                    <div class="movie-hover-overlay">
+                        <div class="play-icon">
+                            <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                        </div>
+                    </div>
+                    {% if movie.character %}
+                    <div class="rec-reason-tag reason-content" style="opacity: 1; transform: none; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); border-radius: 4px; padding: 4px 8px; font-size: 0.75rem;">
+                        as {{ movie.character }}
+                    </div>
+                    {% endif %}
+                    <div class="movie-info">
+                        <h3 class="movie-title">{{ movie.title }}</h3>
+                        <div class="movie-meta">
+                            <span class="rating">⭐ {{ (movie.vote_average) | round(1) }}</span>
+                            <span class="year">{{ movie.release_date[:4] if movie.release_date else '' }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

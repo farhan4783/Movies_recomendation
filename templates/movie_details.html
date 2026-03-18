@@ -182,14 +182,14 @@
                 scrollbar-color: var(--primary-color) #222;
             ">
                 {% for actor in movie.cast %}
-                <div class="cast-avatar-card">
+                <a href="/person/{{ actor.id }}" class="cast-avatar-card" style="text-decoration: none; color: inherit; display: block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     <div class="cast-avatar-ring">
                         <img src="{{ actor.profile_path or 'https://ui-avatars.com/api/?name=' + actor.name|urlencode + '&background=1a1a1a&color=888&size=200' }}"
                             alt="{{ actor.name }}">
                     </div>
                     <div class="cast-avatar-name">{{ actor.name }}</div>
                     <div class="cast-avatar-character">{{ actor.character }}</div>
-                </div>
+                </a>
                 {% endfor %}
             </div>
         </section>

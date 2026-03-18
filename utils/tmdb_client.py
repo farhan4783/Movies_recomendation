@@ -292,6 +292,7 @@ def fetch_full_movie_details_by_id(tmdb_id):
     # Cast (top 10)
     cast = [
         {
+            "id": m.get("id"),
             "name": m.get("name"),
             "character": m.get("character"),
             "profile_path": f"{IMAGE_BASE_URL}{m['profile_path']}" if m.get("profile_path") else None,
@@ -327,6 +328,65 @@ def fetch_full_movie_details_by_id(tmdb_id):
 
     _cache.set(cache_key, result, TTL_FULL)
     return result
+
+
+def fetch_person_details(person_id):
+    """Full person (actor/director) details by TMDB ID. Cached for TTL_FULL."""
+    if not TMDB_API_KEY or not person_id:
+        return None
+
+    cache_key = f"person:{person_id}"
+    cached = _cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    data = _get(
+        f"{BASE_URL}/person/{person_id}",
+        {"api_key": TMDB_API_KEY, "append_to_response": "combined_credits"},
+        timeout=10,
+    )
+
+    if data.get("status_code") == 34 or not data.get("id"):
+        return None
+
+    credits_data = data.get("combined_credits", {})
+    cast_credits = credits_data.get("cast", [])
+    
+    # Sort cast credits by popularity
+    cast_credits_sorted = sorted(
+        [c for c in cast_credits if c.get("poster_path")], 
+        key=lambda x: x.get("popularity", 0), 
+        reverse=True
+    )[:15]
+
+    known_for = [
+        {
+            "id": c.get("id"),
+            "title": c.get("title") or c.get("name"),
+            "poster_path": f"{IMAGE_BASE_URL}{c['poster_path']}" if c.get("poster_path") else None,
+            "release_date": c.get("release_date") or c.get("first_air_date", ""),
+            "vote_average": round(c.get("vote_average", 0), 1),
+            "media_type": c.get("media_type", "movie"),
+            "character": c.get("character", ""),
+        }
+        for c in cast_credits_sorted
+    ]
+
+    result = {
+        "id": data.get("id"),
+        "name": data.get("name"),
+        "biography": data.get("biography"),
+        "profile_path": f"{IMAGE_BASE_URL}{data['profile_path']}" if data.get("profile_path") else None,
+        "birthday": data.get("birthday"),
+        "deathday": data.get("deathday"),
+        "place_of_birth": data.get("place_of_birth"),
+        "known_for_department": data.get("known_for_department"),
+        "known_for": known_for,
+    }
+
+    _cache.set(cache_key, result, TTL_FULL)
+    return result
+
 
 
 def search_movies(query, page=1):
