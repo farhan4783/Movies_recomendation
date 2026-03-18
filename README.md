@@ -305,9 +305,10 @@ For support, email us or open an issue on GitHub.
 ---
 
 
-![Movie Maverick](image-1.png)
 
-![Movie Maverick](image-2.png)
+Made by farhan
 
-Made with ❤️ by farhan
+Contact me at [mohdfarhan4002@gmail.com]
+
+connect with me at linkedin-https://www.linkedin.com/in/mohdfarhansde/
 
