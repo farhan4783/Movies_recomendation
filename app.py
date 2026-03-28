@@ -831,20 +831,108 @@ def surfing_page():
     return render_template("surfing.html", user=current_user)
 
 
-# ===== NEW: Random Suggestion API =====
+# ===== NEW: Dashboard Page =====
+@app.route("/dashboard")
+@login_required
+def dashboard_page():
+    """User analytics dashboard."""
+    return render_template("dashboard.html", user=current_user)
+
+
+# ===== NEW: Dashboard Stats API =====
+@app.route("/api/dashboard-stats")
+@login_required
+def api_dashboard_stats():
+    """Comprehensive user analytics for the dashboard."""
+    reviews = Review.query.filter_by(user_id=current_user.id).all()
+    history = ViewingHistory.query.filter_by(user_id=current_user.id).all()
+    watchlist_count = Watchlist.query.filter_by(user_id=current_user.id).count()
+    watched_count = Watchlist.query.filter_by(user_id=current_user.id, watch_status='watched').count()
+    
+    # Avg rating given
+    avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0
+    
+    # Unique movies viewed
+    unique_movies = len(set(h.movie_title for h in history))
+    
+    # Genre distribution from reviews/history
+    all_titles = list(set([r.movie_title for r in reviews] + [h.movie_title for h in history]))
+    genre_distribution = {}
+    if all_titles and not movies_df.empty:
+        for title in all_titles:
+            row = movies_df[movies_df['title'] == title]
+            if not row.empty:
+                genre = str(row.iloc[0].get('genre', ''))
+                for g in genre.split('|'):
+                    g = g.strip()
+                    if g:
+                        genre_distribution[g] = genre_distribution.get(g, 0) + 1
+    
+    # Rating distribution (1-5)
+    rating_distribution = {}
+    for r in reviews:
+        key = str(r.rating)
+        rating_distribution[key] = rating_distribution.get(key, 0) + 1
+    
+    # Monthly activity (last 6 months)
+    monthly_activity = {}
+    for h in history:
+        if h.viewed_at:
+            month_key = h.viewed_at.strftime("%b")
+            monthly_activity[month_key] = monthly_activity.get(month_key, 0) + 1
+    
+    # Top genre
+    top_genre = "N/A"
+    if genre_distribution:
+        top_genre = max(genre_distribution, key=genre_distribution.get)
+    
+    return jsonify({
+        "movies_viewed": unique_movies,
+        "reviews_written": len(reviews),
+        "watchlist_count": watchlist_count,
+        "watched_count": watched_count,
+        "avg_rating_given": avg_rating,
+        "genre_distribution": genre_distribution,
+        "rating_distribution": rating_distribution,
+        "monthly_activity": monthly_activity,
+        "top_genre": top_genre,
+        "member_since": current_user.created_at.strftime("%b %Y") if current_user.created_at else "N/A"
+    })
+
+
+# ===== NEW: Roulette Page =====
+@app.route("/roulette")
+def roulette_page():
+    """Movie Roulette — spin the wheel discovery."""
+    return render_template("roulette.html", user=current_user)
+
+
+# ===== Random Suggestion API (Enhanced with genre filter) =====
 @app.route("/api/random-suggestion")
 def api_random_suggestion():
-    """Returns a random high-rated movie for the 'Surprise Me' feature."""
+    """Returns a random high-rated movie for the 'Surprise Me' / Roulette feature."""
     if movies_df.empty:
         return jsonify({"error": "No movies available"}), 404
         
     try:
+        # Optional genre filter
+        genre_filter = request.args.get('genre', '').strip()
+        
+        df = movies_df.copy()
+        
+        # Apply genre filter if provided and not "Any"
+        if genre_filter and genre_filter.lower() != 'any':
+            df = df[df['genre'].str.contains(genre_filter, case=False, na=False)]
+            if df.empty:
+                df = movies_df  # Fallback to all movies
+        
         # Filter for high-rated movies if possible
-        high_rated = movies_df[movies_df['avg_rating'] >= 4.0] if 'avg_rating' in movies_df.columns else movies_df
-        if high_rated.empty:
-            high_rated = movies_df
+        if 'avg_rating' in df.columns:
+            high_rated = df[df['avg_rating'] >= 3.5]
+            if not high_rated.empty:
+                df = high_rated
             
-        random_movie = high_rated.sample(n=1).iloc[0]
+        random_movie = df.sample(n=1).iloc[0]
         title = random_movie['title']
         
         details = fetch_full_movie_details(title)

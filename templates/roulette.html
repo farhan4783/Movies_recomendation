@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Movie Roulette - Movie Maverick{% endblock %}
+
+{% block content %}
+<div class="roulette-page">
+    <h1>🎰 Movie Roulette</h1>
+    <p class="roulette-subtitle">Can't decide what to watch? Let fate choose for you!</p>
+
+    <!-- Genre Picker -->
+    <div class="genre-picker" id="genre-picker">
+        <button class="genre-chip active" data-genre="Any" onclick="selectGenre(this)">🎲 Any Genre</button>
+        <button class="genre-chip" data-genre="Action" onclick="selectGenre(this)">💥 Action</button>
+        <button class="genre-chip" data-genre="Comedy" onclick="selectGenre(this)">😂 Comedy</button>
+        <button class="genre-chip" data-genre="Drama" onclick="selectGenre(this)">🎭 Drama</button>
+        <button class="genre-chip" data-genre="Horror" onclick="selectGenre(this)">👻 Horror</button>
+        <button class="genre-chip" data-genre="Romance" onclick="selectGenre(this)">💕 Romance</button>
+        <button class="genre-chip" data-genre="Sci-Fi" onclick="selectGenre(this)">🚀 Sci-Fi</button>
+        <button class="genre-chip" data-genre="Thriller" onclick="selectGenre(this)">🔪 Thriller</button>
+        <button class="genre-chip" data-genre="Animation" onclick="selectGenre(this)">🎨 Animation</button>
+        <button class="genre-chip" data-genre="Documentary" onclick="selectGenre(this)">📹 Documentary</button>
+    </div>
+
+    <!-- Spinning Wheel -->
+    <div class="wheel-container">
+        <div class="wheel-pointer"></div>
+        <div class="wheel" id="roulette-wheel">
+            <!-- SVG segments with genre labels -->
+            <svg viewBox="0 0 200 200" width="100%" height="100%" style="position:absolute;top:0;left:0;">
+                {% set genres_list = ['ACTION', 'SCI-FI', 'COMEDY', 'DRAMA', 'HORROR', 'ROMANCE', 'THRILLER', 'ANIM.', 'FANTASY', 'DOC.'] %}
+                {% for i in range(10) %}
+                {% set angle = i * 36 + 18 %}
+                {% set rad_x = 70 %}
+                {% set cx = 100 + rad_x * (angle * 3.14159 / 180) | round(2) %}
+                <text x="{{ 100 + 62 * ((i * 36 + 18) * 0.01745329 | round(4)) }}"
+                      y="{{ 100 - 62 * ((i * 36 + 18) * 0.01745329 | round(4)) }}"
+                      fill="white" font-size="7" font-weight="bold" text-anchor="middle"
+                      transform="rotate({{ i * 36 + 18 }}, 100, 100)"
+                      style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
+                </text>
+                {% endfor %}
+            </svg>
+            <!-- Genre labels positioned around the wheel -->
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:94%;height:94%;border-radius:50%;">
+                <span style="position:absolute;top:8%;left:50%;transform:translateX(-50%);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">ACTION</span>
+                <span style="position:absolute;top:15%;right:12%;transform:rotate(36deg);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">SCI-FI</span>
+                <span style="position:absolute;top:35%;right:3%;transform:rotate(72deg);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">COMEDY</span>
+                <span style="position:absolute;bottom:35%;right:3%;transform:rotate(108deg);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">DRAMA</span>
+                <span style="position:absolute;bottom:15%;right:12%;transform:rotate(144deg);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">HORROR</span>
+                <span style="position:absolute;bottom:8%;left:50%;transform:translate(-50%,0);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">ROMANCE</span>
+                <span style="position:absolute;bottom:15%;left:12%;transform:rotate(-144deg);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">THRILLER</span>
+                <span style="position:absolute;top:35%;left:3%;transform:rotate(-72deg);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">ANIMATION</span>
+                <span style="position:absolute;top:15%;left:12%;transform:rotate(-36deg);color:white;font-weight:700;font-size:0.7rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">FANTASY</span>
+            </div>
+        </div>
+        <div class="wheel-center" id="wheel-center">🎬</div>
+    </div>
+
+    <!-- Spin Button -->
+    <button class="spin-btn" id="spin-btn" onclick="spinWheel()">
+        🎰 Spin the Wheel!
+    </button>
+
+    <!-- Reveal Card -->
+    <div class="roulette-reveal" id="reveal-card">
+        <div class="reveal-confetti-zone" id="reveal-confetti"></div>
+        <img id="reveal-poster" src="" alt="Movie Poster">
+        <h2 id="reveal-title"></h2>
+        <div class="reveal-meta">
+            <span id="reveal-rating"></span>
+            <span>•</span>
+            <span id="reveal-year"></span>
+        </div>
+        <p class="reveal-overview" id="reveal-overview"></p>
+        <div class="reveal-genres" id="reveal-genres"></div>
+        <div class="reveal-actions">
+            <a href="#" id="reveal-link" class="primary-btn">🎬 View Movie</a>
+            <button class="secondary-btn" onclick="spinWheel()">🔄 Spin Again</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let selectedGenre = 'Any';
+    let isSpinning = false;
+    let currentRotation = 0;
+
+    function selectGenre(el) {
+        document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedGenre = el.dataset.genre;
+
+        // Visual feedback — bounce the wheel center
+        const center = document.getElementById('wheel-center');
+        center.style.transform = 'translate(-50%, -50%) scale(1.3)';
+        setTimeout(() => center.style.transform = 'translate(-50%, -50%) scale(1)', 200);
+    }
+
+    async function spinWheel() {
+        if (isSpinning) return;
+        isSpinning = true;
+
+        const btn = document.getElementById('spin-btn');
+        const wheel = document.getElementById('roulette-wheel');
+        const reveal = document.getElementById('reveal-card');
+        const center = document.getElementById('wheel-center');
+
+        btn.disabled = true;
+        btn.textContent = '🎰 Spinning...';
+        reveal.classList.remove('visible');
+
+        // Pulse the center emoji while spinning
+        center.textContent = '🎲';
+        center.style.animation = 'pulse 0.5s ease-in-out infinite';
+
+        // Spin animation: 3-5 full rotations + random offset
+        const extraRotation = 1080 + Math.random() * 1800;
+        currentRotation += extraRotation;
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+        // Fetch result while spinning
+        const genreParam = selectedGenre !== 'Any' ? `?genre=${encodeURIComponent(selectedGenre)}` : '';
+
+        try {
+            const res = await fetch(`/api/random-suggestion${genreParam}`);
+            const movie = await res.json();
+
+            // Wait for spin to finish (4s transition)
+            setTimeout(() => {
+                isSpinning = false;
+                btn.disabled = false;
+                btn.textContent = '🎰 Spin Again!';
+                center.textContent = '🎬';
+                center.style.animation = '';
+
+                if (movie.error || !movie.title) {
+                    toast.error('No movie found. Try a different genre!');
+                    return;
+                }
+
+                // Populate reveal card
+                document.getElementById('reveal-poster').src = movie.poster_path || 'https://via.placeholder.com/200x300?text=No+Poster';
+                document.getElementById('reveal-title').textContent = movie.title;
+                document.getElementById('reveal-rating').textContent = `⭐ ${movie.vote_average || 'N/A'}`;
+                document.getElementById('reveal-year').textContent = movie.release_date ? movie.release_date.substring(0, 4) : 'N/A';
+                document.getElementById('reveal-overview').textContent = movie.overview || 'No overview available.';
+
+                // Show genres if available
+                const genresEl = document.getElementById('reveal-genres');
+                if (movie.genres && movie.genres.length > 0) {
+                    genresEl.innerHTML = movie.genres.map(g =>
+                        `<span class="reveal-genre-tag">${g}</span>`
+                    ).join('');
+                } else {
+                    genresEl.innerHTML = '';
+                }
+
+                const link = movie.id ? `/movie/id/${movie.id}` : `/movie/${encodeURIComponent(movie.title)}`;
+                document.getElementById('reveal-link').href = link;
+
+                // Show card with animation
+                setTimeout(() => {
+                    reveal.classList.add('visible');
+                    // Confetti burst!
+                    if (typeof confetti === 'function') {
+                        // Center burst
+                        confetti({
+                            particleCount: 80,
+                            spread: 90,
+                            origin: { y: 0.6 },
+                            colors: ['#e50914', '#f5c518', '#667eea', '#10b981', '#f472b6']
+                        });
+                        // Side bursts
+                        setTimeout(() => {
+                            confetti({
+                                particleCount: 30,
+                                angle: 60,
+                                spread: 55,
+                                origin: { x: 0, y: 0.6 },
+                                colors: ['#f5c518', '#ff6b6b']
+                            });
+                            confetti({
+                                particleCount: 30,
+                                angle: 120,
+                                spread: 55,
+                                origin: { x: 1, y: 0.6 },
+                                colors: ['#667eea', '#10b981']
+                            });
+                        }, 150);
+                    }
+                }, 200);
+            }, 4200);
+
+        } catch (e) {
+            setTimeout(() => {
+                isSpinning = false;
+                btn.disabled = false;
+                btn.textContent = '🎰 Spin the Wheel!';
+                center.textContent = '🎬';
+                center.style.animation = '';
+                toast.error('Something went wrong. Try again!');
+            }, 4200);
+        }
+    }
+</script>
+{% endblock %}

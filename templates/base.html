@@ -337,11 +337,13 @@
                 <a href="/modyverse" class="{{ 'active-link' if request.path == '/modyverse' else '' }}">Modyverse</a>
                 <a href="/chat" class="{{ 'active-link' if request.path == '/chat' else '' }}">AI Chat</a>
                 <a href="/surfing" class="{{ 'active-link' if request.path == '/surfing' else '' }}">🏄 Surfing</a>
+                <a href="/roulette" class="{{ 'active-link' if request.path == '/roulette' else '' }}">🎰 Roulette</a>
 
 
                 {% if current_user.is_authenticated %}
                 <a href="/watchlist" class="{{ 'active-link' if request.path == '/watchlist' else '' }}">Watchlist</a>
                 <a href="/lists" class="{{ 'active-link' if request.path == '/lists' else '' }}">My Lists</a>
+                <a href="/dashboard" class="{{ 'active-link' if request.path == '/dashboard' else '' }}">📊 Dashboard</a>
                 <div class="user-menu">
                     <span class="username-display">Hi, {{ current_user.username }}</span>
                     <a href="/profile" class="{{ 'active-link' if request.path == '/profile' else '' }}">Profile</a>
@@ -435,6 +437,9 @@
         {% endif %}
         {% endwith %}
     </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
 
     <!-- Main Content -->
     <main>
@@ -609,6 +614,48 @@
             } catch (e) { /* silently ignore */ }
         })();
         {% endif %}
+
+        // ===== GLOBAL TOAST SYSTEM =====
+        const toast = {
+            _show(type, icon, title, message, duration = 4000) {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+                const el = document.createElement('div');
+                el.className = `toast toast-${type}`;
+                el.innerHTML = `
+                    <span class="toast-icon">${icon}</span>
+                    <div class="toast-body">
+                        <div class="toast-title">${title}</div>
+                        <div class="toast-message">${message}</div>
+                    </div>
+                    <div class="toast-progress"></div>
+                `;
+                el.onclick = () => {
+                    el.classList.add('toast-exit');
+                    setTimeout(() => el.remove(), 400);
+                };
+                container.appendChild(el);
+                setTimeout(() => {
+                    el.classList.add('toast-exit');
+                    setTimeout(() => el.remove(), 400);
+                }, duration);
+            },
+            success(msg) { this._show('success', '✅', 'Success', msg); },
+            error(msg) { this._show('error', '❌', 'Error', msg); },
+            info(msg) { this._show('info', 'ℹ️', 'Info', msg); },
+            achievement(name) {
+                this._show('achievement', '🏆', 'Achievement Unlocked!', name, 6000);
+                // Fire confetti
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 80,
+                        spread: 70,
+                        origin: { x: 0.9, y: 0.2 },
+                        colors: ['#f5c518', '#e50914', '#667eea', '#10b981']
+                    });
+                }
+            }
+        };
     </script>
     {% block scripts %}{% endblock %}
     <canvas id="confetti-canvas"></canvas>

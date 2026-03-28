@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Movie Maverick{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1>📊 Your Dashboard</h1>
+        <p>Your cinematic journey at a glance, {{ current_user.username }}</p>
+        <div class="dash-member-since" id="member-since"></div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="dash-loading" style="text-align: center; padding: 4rem 0;">
+        <div class="spinner" style="margin: 0 auto 1rem;"></div>
+        <p style="color: var(--text-secondary);">Loading your stats...</p>
+    </div>
+
+    <!-- Stats Grid (populated by JS) -->
+    <div class="dashboard-stats-grid" id="dash-stats" style="display: none;">
+        <div class="dash-stat-card" style="animation-delay: 0s;">
+            <span class="dash-stat-icon">🎬</span>
+            <div class="dash-stat-number" id="stat-movies">0</div>
+            <div class="dash-stat-label">Movies Viewed</div>
+        </div>
+        <div class="dash-stat-card" style="animation-delay: 0.1s;">
+            <span class="dash-stat-icon">✍️</span>
+            <div class="dash-stat-number" id="stat-reviews">0</div>
+            <div class="dash-stat-label">Reviews Written</div>
+        </div>
+        <div class="dash-stat-card" style="animation-delay: 0.2s;">
+            <span class="dash-stat-icon">⭐</span>
+            <div class="dash-stat-number" id="stat-avg-rating">0</div>
+            <div class="dash-stat-label">Avg Rating Given</div>
+        </div>
+        <div class="dash-stat-card" style="animation-delay: 0.3s;">
+            <span class="dash-stat-icon">📋</span>
+            <div class="dash-stat-number" id="stat-watchlist">0</div>
+            <div class="dash-stat-label">In Watchlist</div>
+        </div>
+        <div class="dash-stat-card" style="animation-delay: 0.4s;">
+            <span class="dash-stat-icon">✅</span>
+            <div class="dash-stat-number" id="stat-watched">0</div>
+            <div class="dash-stat-label">Completed</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="dashboard-charts" id="dash-charts" style="display: none;">
+        <!-- Genre Distribution -->
+        <div class="dash-chart-card">
+            <h3>🎭 Genre Distribution</h3>
+            <div class="donut-chart" id="genre-donut"></div>
+            <div class="donut-legend" id="genre-legend"></div>
+        </div>
+
+        <!-- Rating Distribution -->
+        <div class="dash-chart-card">
+            <h3>⭐ Your Ratings</h3>
+            <div class="bar-chart" id="rating-bars">
+                <div class="bar-item">
+                    <div class="bar-fill" id="bar-1" data-count="0" style="height: 4px;"></div>
+                    <span class="bar-label">1★</span>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-fill" id="bar-2" data-count="0" style="height: 4px;"></div>
+                    <span class="bar-label">2★</span>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-fill" id="bar-3" data-count="0" style="height: 4px;"></div>
+                    <span class="bar-label">3★</span>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-fill" id="bar-4" data-count="0" style="height: 4px;"></div>
+                    <span class="bar-label">4★</span>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-fill" id="bar-5" data-count="0" style="height: 4px;"></div>
+                    <span class="bar-label">5★</span>
+                </div>
+            </div>
+            <div class="rating-summary" id="rating-summary"></div>
+        </div>
+    </div>
+
+    <!-- Watch History Timeline -->
+    <div class="dash-timeline-section" id="timeline-section" style="display: none;">
+        <h3>📅 Monthly Activity</h3>
+        <div class="timeline-chart" id="timeline-chart"></div>
+    </div>
+
+    <!-- Movie Personality Card -->
+    <div class="personality-card" id="personality-card" style="display: none;">
+        <div class="personality-glow"></div>
+        <span style="font-size: 3rem; display: block; margin-bottom: 0.5rem;">🎭</span>
+        <h2 id="personality-title">Loading...</h2>
+        <p id="personality-desc"></p>
+        <div class="personality-traits" id="personality-traits"></div>
+    </div>
+
+    <!-- For You Recommendations -->
+    <div class="foryou-section" id="foryou-section" style="display: none;">
+        <h3>🎯 Recommended For You</h3>
+        <div class="foryou-grid" id="foryou-grid"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ===== DASHBOARD DATA LOADER =====
+    const GENRE_COLORS = [
+        '#e50914', '#667eea', '#f5c518', '#10b981', '#f472b6',
+        '#60a5fa', '#a855f7', '#00cfc8', '#ff6b6b', '#fbbf24'
+    ];
+
+    async function loadDashboard() {
+        try {
+            const res = await fetch('/api/dashboard-stats');
+            if (!res.ok) throw new Error('Failed to load stats');
+            const data = await res.json();
+
+            // Hide loading
+            document.getElementById('dash-loading').style.display = 'none';
+
+            // Member since
+            if (data.member_since) {
+                document.getElementById('member-since').innerHTML =
+                    `<span>🗓️ Member since ${data.member_since}</span>`;
+            }
+
+            // Populate stats with animation
+            animateCounter('stat-movies', data.movies_viewed || 0);
+            animateCounter('stat-reviews', data.reviews_written || 0);
+            document.getElementById('stat-avg-rating').textContent = data.avg_rating_given || '0';
+            animateCounter('stat-watchlist', data.watchlist_count || 0);
+            animateCounter('stat-watched', data.watched_count || 0);
+            document.getElementById('dash-stats').style.display = 'grid';
+
+            // Genre Donut
+            const genres = data.genre_distribution || {};
+            const genreEntries = Object.entries(genres).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            if (genreEntries.length > 0) {
+                renderDonut(genreEntries);
+            } else {
+                document.getElementById('genre-donut').innerHTML =
+                    '<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-tertiary);"><p>Watch more movies to see genre stats!</p></div>';
+            }
+
+            // Rating Bars
+            const ratings = data.rating_distribution || {};
+            renderRatingBars(ratings);
+
+            // Rating summary
+            const totalRatings = Object.values(ratings).reduce((s, v) => s + v, 0);
+            if (totalRatings > 0) {
+                const summaryEl = document.getElementById('rating-summary');
+                summaryEl.innerHTML = `<span class="rating-total">${totalRatings} total ratings</span>`;
+            }
+
+            document.getElementById('dash-charts').style.display = 'grid';
+
+            // Timeline
+            if (data.monthly_activity) {
+                renderTimeline(data.monthly_activity);
+            }
+
+        } catch (e) {
+            document.getElementById('dash-loading').innerHTML =
+                '<p style="color: var(--text-secondary);">📊 Start watching and reviewing movies to see your dashboard!</p>';
+        }
+    }
+
+    function animateCounter(id, target) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let current = 0;
+        const step = Math.max(1, Math.ceil(target / 30));
+        const interval = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                current = target;
+                clearInterval(interval);
+            }
+            el.textContent = current;
+        }, 40);
+    }
+
+    function renderDonut(entries) {
+        const total = entries.reduce((s, [, v]) => s + v, 0);
+        let gradientParts = [];
+        let offset = 0;
+        const legend = document.getElementById('genre-legend');
+
+        entries.forEach(([genre, count], i) => {
+            const pct = (count / total) * 100;
+            const color = GENRE_COLORS[i % GENRE_COLORS.length];
+            const start = offset;
+            offset += pct;
+            gradientParts.push(`${color} ${start}% ${offset}%`);
+
+            // Legend item
+            const item = document.createElement('span');
+            item.className = 'donut-legend-item';
+            item.innerHTML = `<span class="donut-legend-color" style="background:${color}"></span>${genre} (${count})`;
+            legend.appendChild(item);
+        });
+
+        const donut = document.getElementById('genre-donut');
+        donut.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+        donut.innerHTML = `
+            <div class="donut-hole">
+                <span class="donut-center-number">${total}</span>
+                <span class="donut-center-label">Movies</span>
+            </div>
+        `;
+    }
+
+    function renderRatingBars(ratings) {
+        const maxCount = Math.max(1, ...Object.values(ratings));
+        for (let i = 1; i <= 5; i++) {
+            const count = ratings[String(i)] || 0;
+            const bar = document.getElementById(`bar-${i}`);
+            if (bar) {
+                const heightPct = (count / maxCount) * 100;
+                bar.setAttribute('data-count', count);
+                // Delay for animation effect
+                setTimeout(() => {
+                    bar.style.height = Math.max(4, heightPct) + '%';
+                }, 100 + i * 150);
+            }
+        }
+    }
+
+    function renderTimeline(monthlyData) {
+        if (!monthlyData || Object.keys(monthlyData).length === 0) return;
+        const section = document.getElementById('timeline-section');
+        const chart = document.getElementById('timeline-chart');
+        const entries = Object.entries(monthlyData).slice(-6); // Last 6 months
+        const maxVal = Math.max(1, ...entries.map(([, v]) => v));
+
+        chart.innerHTML = entries.map(([month, count]) => {
+            const pct = (count / maxVal) * 100;
+            return `
+                <div class="timeline-bar-wrapper">
+                    <div class="timeline-bar" style="height: ${Math.max(8, pct)}%">
+                        <span class="timeline-count">${count}</span>
+                    </div>
+                    <span class="timeline-month">${month}</span>
+                </div>`;
+        }).join('');
+        section.style.display = 'block';
+    }
+
+    // ===== PERSONALITY =====
+    async function loadPersonality() {
+        try {
+            const res = await fetch('/api/personality');
+            if (!res.ok) return;
+            const data = await res.json();
+            document.getElementById('personality-title').textContent = data.title || 'The Mystery Viewer';
+            document.getElementById('personality-desc').textContent = data.description || '';
+            const traitsEl = document.getElementById('personality-traits');
+            (data.traits || []).forEach(t => {
+                const span = document.createElement('span');
+                span.className = 'personality-trait';
+                span.textContent = t;
+                traitsEl.appendChild(span);
+            });
+            document.getElementById('personality-card').style.display = 'block';
+        } catch (e) { /* ignore */ }
+    }
+
+    // ===== FOR YOU =====
+    async function loadForYou() {
+        try {
+            const res = await fetch('/api/for-you');
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data.results || data.results.length === 0) return;
+
+            const grid = document.getElementById('foryou-grid');
+            grid.innerHTML = data.results.map(m => {
+                const href = m.id ? `/movie/id/${m.id}` : `/movie/${encodeURIComponent(m.title || '')}`;
+                const poster = m.poster_path || 'https://via.placeholder.com/165x250?text=No+Poster';
+                return `
+                    <div class="movie-card" onclick="window.location.href='${href}'" style="cursor:pointer;">
+                        <div class="card-shine"></div>
+                        <img src="${poster}" alt="${m.title || ''}" class="movie-poster" loading="lazy">
+                        <div class="movie-hover-overlay">
+                            <div class="play-icon">
+                                <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                            </div>
+                        </div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${m.title || ''}</h3>
+                            <div class="movie-meta">
+                                <span class="rating">⭐ ${m.vote_average || 'N/A'}</span>
+                                <span class="year">${(m.release_date || '').slice(0, 4)}</span>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+            document.getElementById('foryou-section').style.display = 'block';
+        } catch (e) { /* ignore */ }
+    }
+
+    // Load everything
+    loadDashboard();
+    loadPersonality();
+    loadForYou();
+</script>
+{% endblock %}

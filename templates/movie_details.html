@@ -137,6 +137,12 @@
                         <a href="/login?next={{ request.path }}" class="primary-btn">Login to Add to Watchlist</a>
                         {% endif %}
 
+                        {% if movie.trailer_url %}
+                        <button class="play-trailer-btn" onclick="openCinemaMode()">
+                            <span class="play-tri"></span> Watch Trailer
+                        </button>
+                        {% endif %}
+
                         <!-- Social Share Buttons -->
                         <div class="share-btn-group" style="display: flex; gap: 0.5rem;">
                             <button class="share-btn" id="share-x" onclick="shareOnX()" title="Share on X"
@@ -159,6 +165,15 @@
         </div>
     </div>
 
+    <!-- Cinema Mode Overlay -->
+    {% if movie.trailer_url %}
+    <div class="cinema-overlay" id="cinema-overlay" onclick="handleCinemaClick(event)">
+        <button class="cinema-close" onclick="closeCinemaMode()">✕</button>
+        <div class="cinema-player" id="cinema-player">
+            <!-- iframe injected by JS for performance -->
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Data Injection -->
     <script id="movie-data" type="application/json">
@@ -488,6 +503,19 @@
 <script>
     const movieData = JSON.parse(document.getElementById('movie-data').textContent);
 
+    // Apply rating badge glow effect
+    (function applyRatingGlow() {
+        const badges = document.querySelectorAll('.rating-badge');
+        badges.forEach(badge => {
+            const rating = parseFloat(movieData.vote_average);
+            if (rating >= 8) {
+                badge.classList.add('rating-glow-gold');
+            } else if (rating >= 7) {
+                badge.classList.add('rating-glow-teal');
+            }
+        });
+    })();
+
     // Track this movie in Recently Viewed (localStorage)
     (function trackRecentlyViewed() {
         try {
@@ -525,16 +553,20 @@
                     btn.classList.add('active');
                     btn.style.background = '#333';
                     btn.style.border = '1px solid var(--primary-color)';
-                    if (typeof toast !== 'undefined') toast.success('Added to Watchlist!');
+                    toast.success('Added to Watchlist!');
                 } else {
                     btn.innerText = 'Add to Watchlist';
                     btn.classList.remove('active');
                     btn.style.background = '';
                     btn.style.border = '';
-                    if (typeof toast !== 'undefined') toast.info('Removed from Watchlist');
+                    toast.info('Removed from Watchlist');
+                }
+                // Show achievement toasts
+                if (data.new_achievements && data.new_achievements.length > 0) {
+                    data.new_achievements.forEach(a => toast.achievement(a));
                 }
             } else {
-                if (typeof toast !== 'undefined') toast.error('Error updating watchlist');
+                toast.error('Error updating watchlist');
             }
         } catch (e) {
             console.error(e);
@@ -597,10 +629,17 @@
 
             const data = await response.json();
             if (data.success) {
-                location.reload();
+                toast.success('Review submitted!');
+                // Show achievement toasts before reload
+                if (data.new_achievements && data.new_achievements.length > 0) {
+                    data.new_achievements.forEach(a => toast.achievement(a));
+                    // Delay reload so user sees the toast
+                    setTimeout(() => location.reload(), 2500);
+                } else {
+                    setTimeout(() => location.reload(), 800);
+                }
             } else {
-                if (typeof toast !== 'undefined') toast.error(data.message || 'Error submitting review');
-                else alert(data.message || 'Error submitting review');
+                toast.error(data.message || 'Error submitting review');
                 submitBtn.disabled = false;
             }
         } catch (error) {
@@ -683,5 +722,37 @@
         console.warn('AI similar movies failed:', e);
     }
     }) ();
+
+    // ===== CINEMA MODE =====
+    function openCinemaMode() {
+        const overlay = document.getElementById('cinema-overlay');
+        const player = document.getElementById('cinema-player');
+        if (!overlay || !player) return;
+        const trailerUrl = movieData.trailer_url;
+        if (!trailerUrl) return;
+        // Inject iframe with autoplay
+        player.innerHTML = `<iframe src="${trailerUrl}?autoplay=1&rel=0" 
+            allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCinemaMode() {
+        const overlay = document.getElementById('cinema-overlay');
+        const player = document.getElementById('cinema-player');
+        if (overlay) overlay.classList.remove('active');
+        if (player) setTimeout(() => { player.innerHTML = ''; }, 400);
+        document.body.style.overflow = '';
+    }
+
+    function handleCinemaClick(e) {
+        if (e.target === document.getElementById('cinema-overlay')) {
+            closeCinemaMode();
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeCinemaMode();
+    });
 </script>
 {% endblock %}
