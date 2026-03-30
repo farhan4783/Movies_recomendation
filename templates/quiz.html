@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}AI Movie Quiz - Movie Maverick{% endblock %}
+
+{% block content %}
+<div class="quiz-container" id="quiz-app">
+    <!-- Screen 1: Setup -->
+    <div id="quiz-setup">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 class="hero-title" style="font-size: 2.5rem; margin-bottom: 0.5rem;">Movie <span class="highlight">Quiz</span> 🧠</h1>
+            <p style="color: var(--text-secondary);">Test your cinema knowledge against our AI.</p>
+        </div>
+
+        <h3 style="margin-bottom: 1rem; font-family: var(--font-heading);">Select a Category:</h3>
+        <div class="quiz-category-grid" id="category-grid">
+            <div class="quiz-category-btn selected" data-cat="General Cinema">
+                <span class="quiz-category-emoji">🎬</span>
+                <span class="quiz-category-label">General Cinema</span>
+            </div>
+            <div class="quiz-category-btn" data-cat="Sci-Fi & Fantasy">
+                <span class="quiz-category-emoji">🛸</span>
+                <span class="quiz-category-label">Sci-Fi & Fantasy</span>
+            </div>
+            <div class="quiz-category-btn" data-cat="Marvel Universe">
+                <span class="quiz-category-emoji">🦸‍♂️</span>
+                <span class="quiz-category-label">Marvel Universe</span>
+            </div>
+            <div class="quiz-category-btn" data-cat="Horror Classics">
+                <span class="quiz-category-emoji">🔪</span>
+                <span class="quiz-category-label">Horror Classics</span>
+            </div>
+            <div class="quiz-category-btn" data-cat="Oscar Winners">
+                <span class="quiz-category-emoji">🏆</span>
+                <span class="quiz-category-label">Oscar Winners</span>
+            </div>
+            <div class="quiz-category-btn" data-cat="90s Nostalgia">
+                <span class="quiz-category-emoji">📼</span>
+                <span class="quiz-category-label">90s Nostalgia</span>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 1rem; font-family: var(--font-heading);">Difficulty:</h3>
+        <select id="quiz-difficulty" class="modal-input" style="width: 100%; margin-bottom: 2rem; background: rgba(255,255,255,0.05); color: white;">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+            <option value="expert">Expert (Impossible)</option>
+        </select>
+
+        <button class="primary-btn" id="start-quiz-btn" style="width: 100%; justify-content: center; padding: 1.25rem;">
+            Start Quiz
+        </button>
+    </div>
+
+    <!-- Screen 2: Active Quiz -->
+    <div id="quiz-active" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-weight: 600; color: var(--text-secondary);">
+                Question <span id="q-current" style="color: white;">1</span> of <span id="q-total">10</span>
+            </div>
+            <div class="quiz-timer" id="quiz-timer">
+                ⏳ <span id="time-left">15</span>s
+            </div>
+        </div>
+
+        <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="quiz-progress" style="width: 10%;"></div>
+        </div>
+
+        <div class="quiz-question-card glass-panel-glow">
+            <div class="quiz-question-text" id="question-text">Loading question...</div>
+            <div class="quiz-options" id="quiz-options">
+                <!-- Options populated by JS -->
+            </div>
+            <div id="fun-fact-container" style="display: none;">
+                <div class="quiz-fun-fact" id="fun-fact-text"></div>
+                <button class="secondary-btn" id="next-q-btn" style="margin-top: 1.5rem; width: 100%; justify-content: center;">Next Question</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 3: Results -->
+    <div id="quiz-results" style="display: none;">
+        <div class="quiz-score-card glass-panel-glow" style="background: rgba(255,255,255,0.03); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+            <h2 style="font-family: var(--font-heading); margin-bottom: 1rem;">Quiz Complete!</h2>
+            <div class="quiz-score-number" id="final-score">0</div>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.2rem;">Points Scored</p>
+            
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;" id="correct-count">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-tertiary);">Correct</div>
+                </div>
+                <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #ef4444;" id="wrong-count">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-tertiary);">Wrong</div>
+                </div>
+            </div>
+
+            <button class="primary-btn" onclick="location.reload()" style="width: 100%; justify-content: center;">Play Again</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // DOM Elements
+    const setupScreen = document.getElementById("quiz-setup");
+    const activeScreen = document.getElementById("quiz-active");
+    const resultsScreen = document.getElementById("quiz-results");
+    
+    // State
+    let questions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let timer;
+    let timeLeft = 15;
+    let isAnswering = false;
+
+    // Setup: Category selection
+    document.querySelectorAll(".quiz-category-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".quiz-category-btn").forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+        });
+    });
+
+    // Setup: Start Quiz
+    document.getElementById("start-quiz-btn").addEventListener("click", async function() {
+        const btn = this;
+        const category = document.querySelector(".quiz-category-btn.selected").dataset.cat;
+        const difficulty = document.getElementById("quiz-difficulty").value;
+        
+        btn.innerHTML = '<div class="spinner spinner-sm"></div> Generating AI Quiz...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch("/api/quiz/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ category, difficulty })
+            });
+            const data = await res.json();
+            
+            if (data.questions && data.questions.length > 0) {
+                questions = data.questions;
+                document.getElementById("q-total").innerText = questions.length;
+                
+                setupScreen.style.animation = "fadeOut 0.3s ease";
+                setTimeout(() => {
+                    setupScreen.style.display = "none";
+                    activeScreen.style.display = "block";
+                    activeScreen.style.animation = "fadeIn 0.3s ease";
+                    loadQuestion(0);
+                }, 300);
+            } else {
+                toast.error("Failed to generate quiz questions.");
+                btn.innerHTML = 'Start Quiz';
+                btn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Network error while generating quiz.");
+            btn.innerHTML = 'Start Quiz';
+            btn.disabled = false;
+        }
+    });
+
+    function loadQuestion(idx) {
+        currentIdx = idx;
+        isAnswering = false;
+        const q = questions[idx];
+        
+        // Update header
+        document.getElementById("q-current").innerText = idx + 1;
+        document.getElementById("quiz-progress").style.width = `${((idx + 1) / questions.length) * 100}%`;
+        
+        // Content
+        document.getElementById("question-text").innerText = q.question;
+        document.getElementById("fun-fact-container").style.display = "none";
+        
+        const optionsContainer = document.getElementById("quiz-options");
+        optionsContainer.innerHTML = "";
+        
+        const letters = ['A', 'B', 'C', 'D'];
+        q.options.forEach((opt, oIdx) => {
+            const btn = document.createElement("div");
+            btn.className = "quiz-option";
+            btn.innerHTML = `<div class="option-letter">${letters[oIdx]}</div> <span>${opt}</span>`;
+            btn.onclick = () => handleAnswer(oIdx, btn);
+            optionsContainer.appendChild(btn);
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        timeLeft = 15; // 15 seconds per question
+        const timerEl = document.getElementById("quiz-timer");
+        const timeText = document.getElementById("time-left");
+        
+        timerEl.classList.remove("urgent");
+        timeText.innerText = timeLeft;
+        
+        clearInterval(timer);
+        timer = setInterval(() => {
+            timeLeft--;
+            timeText.innerText = timeLeft;
+            
+            if (timeLeft <= 5) {
+                timerEl.classList.add("urgent");
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                handleAnswer(-1, null); // Timeout
+            }
+        }, 1000);
+    }
+
+    function handleAnswer(selectedIdx, btnElement) {
+        if (isAnswering) return;
+        isAnswering = true;
+        clearInterval(timer);
+        
+        const q = questions[currentIdx];
+        const isCorrect = selectedIdx === q.correct;
+        const options = document.querySelectorAll(".quiz-option");
+        
+        // Reveal answers
+        options.forEach((opt, idx) => {
+            opt.style.pointerEvents = "none"; // Disable clicks
+            if (idx === q.correct) {
+                opt.classList.add("correct");
+            } else if (idx === selectedIdx) {
+                opt.classList.add("wrong");
+            }
+        });
+
+        // Scoring
+        if (isCorrect) {
+            score += (100 + (timeLeft * 10)); // Base 100 + time bonus
+            correctCount++;
+            import('/static/animations.js').then(module => {
+                if(window.createConfetti) {
+                    const rect = btnElement.getBoundingClientRect();
+                    createConfetti(rect.left + rect.width/2, rect.top);
+                }
+            });
+        } else {
+            wrongCount++;
+            if (selectedIdx === -1) {
+                toast.warning("Time's up!");
+            }
+        }
+
+        // Show fun fact & next button
+        const funFactContainer = document.getElementById("fun-fact-container");
+        document.getElementById("fun-fact-text").innerText = `💡 Fun Fact: ${q.fun_fact}`;
+        funFactContainer.style.display = "block";
+        funFactContainer.style.animation = "fadeInUp 0.4s ease";
+    }
+
+    document.getElementById("next-q-btn").addEventListener("click", () => {
+        if (currentIdx + 1 < questions.length) {
+            loadQuestion(currentIdx + 1);
+        } else {
+            showResults();
+        }
+    });
+
+    function showResults() {
+        activeScreen.style.animation = "fadeOut 0.3s ease";
+        setTimeout(() => {
+            activeScreen.style.display = "none";
+            resultsScreen.style.display = "block";
+            resultsScreen.style.animation = "scaleIn 0.5s ease";
+            
+            document.getElementById("final-score").innerText = score;
+            document.getElementById("correct-count").innerText = correctCount;
+            document.getElementById("wrong-count").innerText = wrongCount;
+            
+            if (score > 1000) {
+                if(window.createConfetti) {
+                    createConfetti(window.innerWidth/2, window.innerHeight/2, 100);
+                }
+            }
+        }, 300);
+    }
+});
+</script>
+{% endblock %}

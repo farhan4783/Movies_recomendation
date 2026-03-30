@@ -945,5 +945,116 @@ def api_random_suggestion():
         return jsonify({"error": str(e)}), 500
 
 
+# ===== NEW: Collections Page =====
+@app.route("/collections")
+def collections_page():
+    """Curated movie collections — AI-generated themes."""
+    return render_template("collections.html", user=current_user)
+
+
+@app.route("/api/collections")
+def api_collections():
+    """Returns curated movie collections, mixing hardcoded themes with TMDB data."""
+    collections_data = []
+    themes = [
+        {"name": "Mind-Bending Sci-Fi", "emoji": "🧠", "genre_id": 878, "desc": "Films that challenge reality and push the boundaries of imagination."},
+        {"name": "Oscar Best Picture Vibes", "emoji": "🏆", "genre_id": 18, "desc": "Prestige cinema that defines generations."},
+        {"name": "90s Nostalgia", "emoji": "📼", "genre_id": 35, "desc": "The golden era of feel-good movies."},
+        {"name": "Epic Adventures", "emoji": "⚔️", "genre_id": 12, "desc": "Grand journeys across uncharted territories."},
+        {"name": "Spine-Chilling Horror", "emoji": "👻", "genre_id": 27, "desc": "Nightmares brought to life on screen."},
+        {"name": "Heartwarming Romance", "emoji": "💕", "genre_id": 10749, "desc": "Love stories that make your heart sing."},
+    ]
+
+    from utils.tmdb_client import fetch_movies_by_genre
+    for theme in themes:
+        movies = fetch_movies_by_genre(theme["genre_id"], page=1)
+        if movies:
+            collections_data.append({
+                "name": theme["name"],
+                "emoji": theme["emoji"],
+                "description": theme["desc"],
+                "movies": movies[:10]
+            })
+
+    return jsonify({"collections": collections_data})
+
+
+# ===== NEW: Quiz Page =====
+@app.route("/quiz")
+def quiz_page():
+    """AI Movie Quiz — interactive trivia."""
+    return render_template("quiz.html", user=current_user)
+
+
+@app.route("/api/quiz/generate", methods=["POST"])
+def api_quiz_generate():
+    """Generate quiz questions using Gemini AI."""
+    data = request.get_json() or {}
+    category = data.get("category", "General Cinema")
+    difficulty = data.get("difficulty", "medium")
+
+    from model.ai_recommender import GEMINI_API_KEY, GENAI_AVAILABLE
+    if not GEMINI_API_KEY or not GENAI_AVAILABLE:
+        # Fallback hardcoded questions
+        return jsonify({"questions": _get_fallback_questions()})
+
+    try:
+        import google.generativeai as genai
+        model = genai.GenerativeModel('gemini-2.0-flash')
+
+        prompt = f"""Generate exactly 8 movie trivia questions about "{category}" at {difficulty} difficulty.
+
+Return ONLY a JSON array. Each element must be an object with:
+- "question": the question text
+- "options": array of exactly 4 string choices
+- "correct": index (0-3) of the correct answer
+- "fun_fact": a short fun fact about the answer
+
+Example:
+[{{"question":"Who directed Inception?","options":["Christopher Nolan","Steven Spielberg","James Cameron","Ridley Scott"],"correct":0,"fun_fact":"Nolan spent 10 years writing the screenplay."}}]
+
+Return ONLY the JSON array, no other text."""
+
+        response = model.generate_content(prompt)
+        text = response.text.replace("```json", "").replace("```", "").strip()
+        import json
+        questions = json.loads(text)
+        return jsonify({"questions": questions})
+    except Exception as e:
+        print(f"Quiz generation error: {e}")
+        return jsonify({"questions": _get_fallback_questions()})
+
+
+def _get_fallback_questions():
+    """Hardcoded fallback questions if AI is unavailable."""
+    return [
+        {"question": "Who directed 'The Shawshank Redemption'?", "options": ["Frank Darabont", "Steven Spielberg", "Martin Scorsese", "Quentin Tarantino"], "correct": 0, "fun_fact": "It was Darabont's directorial debut."},
+        {"question": "Which movie features the line 'Here's looking at you, kid'?", "options": ["Gone with the Wind", "Casablanca", "The Maltese Falcon", "Citizen Kane"], "correct": 1, "fun_fact": "Humphrey Bogart ad-libbed this famous line."},
+        {"question": "What year was the first Star Wars film released?", "options": ["1975", "1977", "1979", "1980"], "correct": 1, "fun_fact": "It was originally titled 'Adventures of Luke Starkiller'."},
+        {"question": "Which film won the first-ever Academy Award for Best Picture?", "options": ["Sunrise", "Wings", "The Jazz Singer", "Metropolis"], "correct": 1, "fun_fact": "Wings was a silent war film about WWI fighter pilots."},
+        {"question": "Who played The Joker in 'The Dark Knight'?", "options": ["Jack Nicholson", "Jared Leto", "Heath Ledger", "Joaquin Phoenix"], "correct": 2, "fun_fact": "Ledger posthumously won the Oscar for this role."},
+        {"question": "What is the highest-grossing film of all time (unadjusted)?", "options": ["Avengers: Endgame", "Avatar", "Titanic", "Star Wars: The Force Awakens"], "correct": 1, "fun_fact": "Avatar reclaimed the top spot after a 2021 re-release in China."},
+        {"question": "In 'The Matrix', what color pill does Neo take?", "options": ["Blue", "Red", "Green", "Yellow"], "correct": 1, "fun_fact": "The red pill concept has become a major cultural metaphor."},
+        {"question": "Which director made 'Pulp Fiction'?", "options": ["David Fincher", "Quentin Tarantino", "Guy Ritchie", "Martin Scorsese"], "correct": 1, "fun_fact": "Tarantino wrote the script in Amsterdam."},
+    ]
+
+
+# ===== NEW: World Map Page =====
+@app.route("/worldmap")
+def worldmap_page():
+    """Interactive world map — discover movies by country."""
+    return render_template("worldmap.html", user=current_user)
+
+
+@app.route("/api/movies/by-region")
+def api_movies_by_region():
+    """Fetch top movies from a specific country."""
+    country_code = request.args.get("country", "US").upper()
+    from utils.tmdb_client import fetch_movies_by_country, COUNTRY_MAP
+    movies = fetch_movies_by_country(country_code)
+    country_name = COUNTRY_MAP.get(country_code, country_code)
+    return jsonify({"results": movies, "country": country_name, "country_code": country_code})
+
+
 if __name__ == "__main__":
     app.run(debug=True)

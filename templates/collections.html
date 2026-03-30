@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Collections - Movie Maverick{% endblock %}
+
+{% block content %}
+<div class="collections-hero">
+    <h1 class="hero-title">Cinematic <span class="highlight">Collections</span></h1>
+    <p class="subtitle">Curated universes, genres, and themes hand-picked for your discovery.</p>
+</div>
+
+<div class="container" id="collections-container">
+    <!-- Collections will be injected here via JS -->
+    <div style="text-align: center; padding: 4rem;">
+        <div class="spinner spinner-lg"></div>
+        <p style="color: var(--text-secondary); margin-top: 1rem;">Curating the perfect collections...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const container = document.getElementById("collections-container");
+    
+    try {
+        const res = await fetch("/api/collections");
+        const data = await res.json();
+        
+        container.innerHTML = "";
+        
+        if (!data.collections || data.collections.length === 0) {
+            container.innerHTML = '<p class="text-center">No collections available at the moment.</p>';
+            return;
+        }
+        
+        data.collections.forEach((collection, idx) => {
+            const row = document.createElement("div");
+            row.className = "collection-row";
+            row.style.animationDelay = `${idx * 0.15}s`;
+            
+            let movieHTML = "";
+            collection.movies.forEach(movie => {
+                const poster = movie.poster_path ? movie.poster_path : '/static/assets/default_poster.png';
+                const ratingClass = movie.vote_average >= 8 ? 'rating-high' : (movie.vote_average >= 6 ? 'rating-mid' : 'rating-low');
+                
+                movieHTML += `
+                    <div class="movie-card" onclick="window.location.href='/movie/${movie.id}'">
+                        <img src="${poster}" alt="${movie.title}" class="movie-poster" loading="lazy">
+                        <div class="movie-hover-overlay">
+                            <div class="play-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${movie.title}</h3>
+                            <div class="movie-meta">
+                                <span>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
+                                <span class="rating ${ratingClass}">⭐ ${movie.vote_average}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            row.innerHTML = `
+                <div class="collection-header">
+                    <span class="collection-emoji">${collection.emoji}</span>
+                    <div>
+                        <h2 class="collection-title">${collection.name}</h2>
+                        <p class="collection-desc">${collection.description}</p>
+                    </div>
+                </div>
+                <div class="film-strip-scroll">
+                    ${movieHTML}
+                </div>
+            `;
+            container.appendChild(row);
+        });
+        
+    } catch (err) {
+        console.error("Error loading collections:", err);
+        container.innerHTML = '<p class="text-center" style="color: var(--primary-color);">Failed to load collections. Please try again later.</p>';
+    }
+});
+</script>
+{% endblock %}

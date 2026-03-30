@@ -501,3 +501,63 @@ def fetch_movies_by_genre(genre_id: int, page: int = 1) -> list:
         return results
     except Exception:
         return []
+
+
+# ---------------------------------------------------------------------------
+# Discover by Country
+# ---------------------------------------------------------------------------
+
+COUNTRY_MAP = {
+    "US": "United States", "GB": "United Kingdom", "FR": "France",
+    "DE": "Germany", "IN": "India", "JP": "Japan", "KR": "South Korea",
+    "CN": "China", "BR": "Brazil", "MX": "Mexico", "IT": "Italy",
+    "ES": "Spain", "AU": "Australia", "CA": "Canada", "RU": "Russia",
+    "SE": "Sweden", "DK": "Denmark", "NO": "Norway", "FI": "Finland",
+    "AR": "Argentina", "TR": "Turkey", "TH": "Thailand", "NG": "Nigeria",
+    "EG": "Egypt", "ZA": "South Africa", "PL": "Poland", "NL": "Netherlands",
+    "IE": "Ireland", "NZ": "New Zealand", "HK": "Hong Kong", "TW": "Taiwan",
+    "IR": "Iran", "CO": "Colombia", "CL": "Chile", "PH": "Philippines",
+}
+
+
+def fetch_movies_by_country(country_code: str, page: int = 1) -> list:
+    """Fetch popular movies from a specific country using TMDB discover."""
+    cache_key = f"discover_country_{country_code}_p{page}"
+    cached = _cache.get(cache_key)
+    if cached:
+        return cached
+
+    if not TMDB_API_KEY:
+        return []
+
+    try:
+        resp = requests.get(
+            f"{BASE_URL}/discover/movie",
+            params={
+                "api_key": TMDB_API_KEY,
+                "with_origin_country": country_code,
+                "sort_by": "vote_count.desc",
+                "page": page,
+                "language": "en-US",
+                "include_adult": "false",
+                "vote_count.gte": 50,
+            },
+            timeout=8,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        results = [
+            {
+                "id": m.get("id"),
+                "title": m.get("title"),
+                "poster_path": f"{IMAGE_BASE_URL}{m['poster_path']}" if m.get("poster_path") else None,
+                "release_date": m.get("release_date", ""),
+                "vote_average": round(m.get("vote_average", 0), 1),
+                "overview": m.get("overview", ""),
+            }
+            for m in data.get("results", [])[:15]
+        ]
+        _cache.set(cache_key, results, ttl=3600)
+        return results
+    except Exception:
+        return []

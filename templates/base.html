@@ -322,6 +322,13 @@
 
 <body>
     <div class="scroll-progress"></div>
+    
+    <!-- Pattern Background -->
+    <div class="aurora-bg">
+        <div class="aurora-orb"></div>
+        <div class="aurora-orb"></div>
+        <div class="aurora-orb"></div>
+    </div>
 
     <!-- Sticky Navbar -->
     <nav class="sticky-nav">
@@ -329,25 +336,62 @@
             <a href="/" class="nav-logo">Movie Maverick</a>
             <div class="nav-links" id="navLinks">
                 <a href="/" class="{{ 'active-link' if request.path == '/' else '' }}">About</a>
-                <a href="/explore" class="{{ 'active-link' if request.path == '/explore' else '' }}">Explore</a>
-                <a href="/discover" class="{{ 'active-link' if request.path == '/discover' else '' }}">✨ Discover</a>
-                <a href="/trending" class="{{ 'active-link' if request.path == '/trending' else '' }}">🔥 Trending</a>
-                <a href="/charts" class="{{ 'active-link' if request.path == '/charts' else '' }}">📊 Charts</a>
-                <a href="/compare" class="{{ 'active-link' if request.path == '/compare' else '' }}">⚖️ Compare</a>
-                <a href="/modyverse" class="{{ 'active-link' if request.path == '/modyverse' else '' }}">Modyverse</a>
-                <a href="/chat" class="{{ 'active-link' if request.path == '/chat' else '' }}">AI Chat</a>
-                <a href="/surfing" class="{{ 'active-link' if request.path == '/surfing' else '' }}">🏄 Surfing</a>
-                <a href="/roulette" class="{{ 'active-link' if request.path == '/roulette' else '' }}">🎰 Roulette</a>
+                
+                <!-- Discover Dropdown -->
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger">
+                        Discover <svg class="caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="/explore"><span class="nav-item-emoji">🔍</span> Explore</a>
+                        <a href="/discover"><span class="nav-item-emoji">✨</span> Smart Discover</a>
+                        <a href="/collections"><span class="nav-item-emoji">🎬</span> Collections</a>
+                        <a href="/worldmap"><span class="nav-item-emoji">🗺️</span> World Map</a>
+                        <div class="nav-divider"></div>
+                        <a href="/trending"><span class="nav-item-emoji">🔥</span> Trending</a>
+                        <a href="/charts"><span class="nav-item-emoji">📊</span> Charts</a>
+                        <a href="/compare"><span class="nav-item-emoji">⚖️</span> Compare</a>
+                    </div>
+                </div>
 
+                <!-- Create/Fun Dropdown -->
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger">
+                        Play & Chat <svg class="caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="/modyverse"><span class="nav-item-emoji">🌀</span> Modyverse</a>
+                        <a href="/chat"><span class="nav-item-emoji">🤖</span> AI Chat</a>
+                        <a href="/quiz"><span class="nav-item-emoji">🧠</span> AI Quiz</a>
+                        <div class="nav-divider"></div>
+                        <a href="/surfing"><span class="nav-item-emoji">🏄</span> Surfing</a>
+                        <a href="/roulette"><span class="nav-item-emoji">🎰</span> Roulette</a>
+                    </div>
+                </div>
 
                 {% if current_user.is_authenticated %}
-                <a href="/watchlist" class="{{ 'active-link' if request.path == '/watchlist' else '' }}">Watchlist</a>
-                <a href="/lists" class="{{ 'active-link' if request.path == '/lists' else '' }}">My Lists</a>
-                <a href="/dashboard" class="{{ 'active-link' if request.path == '/dashboard' else '' }}">📊 Dashboard</a>
-                <div class="user-menu">
-                    <span class="username-display">Hi, {{ current_user.username }}</span>
-                    <a href="/profile" class="{{ 'active-link' if request.path == '/profile' else '' }}">Profile</a>
-                    <a href="/logout" class="logout-btn">Logout</a>
+                <!-- My Stuff Dropdown -->
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger">
+                        My Stuff <svg class="caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="/watchlist"><span class="nav-item-emoji">📌</span> Watchlist</a>
+                        <a href="/lists"><span class="nav-item-emoji">📋</span> Custom Lists</a>
+                        <a href="/dashboard"><span class="nav-item-emoji">📈</span> Dashboard</a>
+                    </div>
+                </div>
+
+                <!-- Profile Dropdown -->
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger" style="color: var(--primary-color);">
+                        {{ current_user.username }} <svg class="caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="/profile"><span class="nav-item-emoji">👤</span> Profile</a>
+                        <div class="nav-divider"></div>
+                        <a href="/logout" style="color: #ef4444;"><span class="nav-item-emoji">🚪</span> Logout</a>
+                    </div>
                 </div>
                 {% else %}
                 <a href="/login" class="login-link {{ 'active-link' if request.path == '/login' else '' }}">Login</a>
@@ -358,7 +402,7 @@
             <!-- Nav Icon Group -->
             <div class="nav-icon-group">
                 <!-- Search Button -->
-                <button class="nav-search-btn" onclick="openSearchModal()" aria-label="Search movies" title="Search">
+                <button class="nav-search-btn" onclick="openSearchModal()" aria-label="Search movies" title="Search (Ctrl+K)">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
@@ -415,9 +459,10 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                <input type="text" id="global-search-input" placeholder="Search any movie..." autocomplete="off"
+                <input type="text" id="global-search-input" placeholder="Search for movies, actors, directors..." autocomplete="off"
                     oninput="onSearchInput(this.value)">
-                <button class="search-close-btn" onclick="closeSearchModal()">ESC</button>
+                <span class="kbd-hint">Esc</span>
+                <button class="search-close-btn" onclick="closeSearchModal()">Close</button>
             </div>
             <div id="search-results-list" class="search-results-list">
                 <div class="search-hint">🎬 Start typing to discover movies...</div>
