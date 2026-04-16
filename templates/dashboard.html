@@ -99,6 +99,15 @@
         <div class="personality-traits" id="personality-traits"></div>
     </div>
 
+    <!-- Community Pulse / Social Feed -->
+    <div class="community-pulse-section" style="margin-bottom: 3rem;">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #60a5fa;">🌍</span> Community Pulse</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">See what others are watching right now</p>
+        <div class="pulse-grid" id="community-pulse" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            <!-- Content built by JS -->
+        </div>
+    </div>
+
     <!-- For You Recommendations -->
     <div class="foryou-section" id="foryou-section" style="display: none;">
         <h3>🎯 Recommended For You</h3>
@@ -306,9 +315,39 @@
         } catch (e) { /* ignore */ }
     }
 
+    // ===== COMMUNITY PULSE =====
+    function loadCommunityPulse() {
+        const pulseGrid = document.getElementById('community-pulse');
+        if(!pulseGrid) return;
+        
+        const mockEvents = [
+            { user: "SarahJ", action: "rated", movie: "Dune: Part Two", detail: "⭐⭐⭐⭐⭐", time: "2 mins ago", color: "#f43f5e" },
+            { user: "Mike99", action: "added to watchlist", movie: "Oppenheimer", detail: "📋", time: "15 mins ago", color: "#3b82f6" },
+            { user: "Elena_V", action: "reviewed", movie: "Poor Things", detail: "Absolutely wildly creative!", time: "1 hour ago", color: "#8b5cf6" },
+            { user: "ChrisT", action: "completed", movie: "Interstellar", detail: "✅", time: "3 hours ago", color: "#10b981" }
+        ];
+        
+        pulseGrid.innerHTML = mockEvents.map(e => `
+            <div class="glass-panel" style="padding: 1rem; display: flex; gap: 1rem; align-items: center; border-left: 3px solid ${e.color};">
+                <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-weight:bold; color:${e.color};">
+                    ${e.user.charAt(0)}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size:0.9rem; margin-bottom:0.2rem;">
+                        <strong>${e.user}</strong> <span style="color:var(--text-secondary);">${e.action}</span>
+                    </div>
+                    <div style="font-weight:600; color:var(--text-primary); margin-bottom:0.2rem;">${e.movie}</div>
+                    <div style="color:var(--text-secondary); font-size:0.85rem; font-style:italic;">${e.detail}</div>
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-tertiary); white-space:nowrap;">${e.time}</div>
+            </div>
+        `).join('');
+    }
+
     // Load everything
     loadDashboard();
     loadPersonality();
     loadForYou();
+    loadCommunityPulse();
 </script>
 {% endblock %}

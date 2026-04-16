@@ -308,35 +308,78 @@
         <p>Browse by genre, match your mood, or find something totally new.</p>
     </div>
 
-    <!-- ===== MOOD PICKER ===== -->
+    <!-- ===== WIZARD MOOD PICKER ===== -->
     <section class="mood-section">
-        <div class="section-label">🎭 What's your mood right now?</div>
-        <div class="mood-grid">
-            {% set moods = [
-                ('😂', 'Laugh Out Loud', 'happy'),
-                ('😭', 'Cry it Out', 'sad'),
-                ('😨', 'Scared Stiff', 'scared'),
-                ('🤩', 'Totally Wowed', 'excited'),
-                ('🧠', 'Mind Blown', 'thoughtful'),
-                ('❤️', 'Feeling Romantic', 'romantic'),
-                ('😤', 'Need Action', 'action'),
-                ('🌙', 'Chill Night', 'chill')
-            ] %}
-            {% for emoji, label, value in moods %}
-            <div class="mood-card" data-mood="{{ value }}" onclick="selectMood(this)">
-                <span class="mood-emoji">{{ emoji }}</span>
-                <div class="mood-label">{{ label }}</div>
+        <div class="section-label">🎯 Movie AI Matchmaker</div>
+        <div class="glass-panel" style="padding: 2rem; position: relative; overflow: hidden; min-height: 300px;">
+            <!-- Step 1: Mood -->
+            <div id="step-1" class="wizard-step" style="transition: all 0.4s ease;">
+                <h3 style="margin-bottom: 1rem; text-align: center;">How are you feeling?</h3>
+                <div class="mood-grid">
+                    {% set moods = [
+                        ('😂', 'Laugh Out Loud', 'Happy'),
+                        ('😭', 'Cry it Out', 'Sad'),
+                        ('😨', 'Scared Stiff', 'Anxious'),
+                        ('🤩', 'Totally Wowed', 'Excited'),
+                        ('🧠', 'Mind Blown', 'Curious'),
+                        ('❤️', 'Feeling Romantic', 'Romantic'),
+                        ('😤', 'Need Action', 'Pumped'),
+                        ('🌙', 'Chill Night', 'Relaxed')
+                    ] %}
+                    {% for emoji, label, value in moods %}
+                    <div class="mood-card" data-step="1" data-value="{{ value }}" onclick="selectWizard(1, this, 'mood')">
+                        <span class="mood-emoji">{{ emoji }}</span>
+                        <div class="mood-label">{{ label }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            {% endfor %}
-        </div>
 
-        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-top:1.5rem;">
-            <button class="mood-get-btn" id="mood-btn" onclick="getMoodRecs()" disabled>
-                <span id="mood-btn-text">✨ Get Picks</span>
-            </button>
-            <span style="font-size:0.85rem; color:var(--text-secondary);">Pick a mood above to start</span>
-        </div>
+            <!-- Step 2: Company -->
+            <div id="step-2" class="wizard-step" style="display: none; transition: all 0.4s ease;">
+                <h3 style="margin-bottom: 1rem; text-align: center;">Who are you watching with?</h3>
+                <div class="mood-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                    <div class="mood-card" data-step="2" onclick="selectWizard(2, this, 'company', 'Solo')">
+                        <span class="mood-emoji">👤</span><div class="mood-label">Just Me</div>
+                    </div>
+                    <div class="mood-card" data-step="2" onclick="selectWizard(2, this, 'company', 'Partner')">
+                        <span class="mood-emoji">❤️</span><div class="mood-label">Partner</div>
+                    </div>
+                    <div class="mood-card" data-step="2" onclick="selectWizard(2, this, 'company', 'Friends')">
+                        <span class="mood-emoji">🍻</span><div class="mood-label">Friends</div>
+                    </div>
+                    <div class="mood-card" data-step="2" onclick="selectWizard(2, this, 'company', 'Family')">
+                        <span class="mood-emoji">👨‍👩‍👧‍👦</span><div class="mood-label">Family</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button class="primary-btn" onclick="prevStep(1)" style="background: var(--surface-hover) !important; color: var(--text-primary) !important;">← Back</button>
+                </div>
+            </div>
 
+            <!-- Step 3: Pacing -->
+            <div id="step-3" class="wizard-step" style="display: none; transition: all 0.4s ease;">
+                <h3 style="margin-bottom: 1rem; text-align: center;">What vibe are you after?</h3>
+                <div class="mood-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                    <div class="mood-card" data-step="3" onclick="selectWizard(3, this, 'story_type', 'Epic Adventure')">
+                        <span class="mood-emoji">🌍</span><div class="mood-label">Epic & Grand</div>
+                    </div>
+                    <div class="mood-card" data-step="3" onclick="selectWizard(3, this, 'story_type', 'Suspenseful')">
+                        <span class="mood-emoji">🫣</span><div class="mood-label">Fast & Tense</div>
+                    </div>
+                    <div class="mood-card" data-step="3" onclick="selectWizard(3, this, 'story_type', 'Meaningful')">
+                        <span class="mood-emoji">🕰️</span><div class="mood-label">Slow Burn</div>
+                    </div>
+                    <div class="mood-card" data-step="3" onclick="selectWizard(3, this, 'story_type', 'Lighthearted')">
+                        <span class="mood-emoji">🎈</span><div class="mood-label">Easy & Fun</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+                    <button class="primary-btn" onclick="prevStep(2)" style="background: var(--surface-hover) !important; color: var(--text-primary) !important;">← Back</button>
+                    <button class="mood-get-btn" id="wizard-submit-btn" onclick="submitWizard()" style="margin: 0;">✨ Reveal Matches</button>
+                </div>
+            </div>
+        </div>
         <div id="mood-results"></div>
     </section>
 
@@ -393,42 +436,42 @@
 
 {% block scripts %}
 <script>
-    let selectedMood = null;
+    let wizardData = { mood: '', company: '', story_type: '' };
 
-    function selectMood(el) {
-        document.querySelectorAll('.mood-card').forEach(c => c.classList.remove('selected'));
+    function selectWizard(step, el, key, val) {
+        document.querySelectorAll(`.mood-card[data-step="${step}"]`).forEach(c => c.classList.remove('selected'));
         el.classList.add('selected');
-        selectedMood = el.dataset.mood;
-        document.getElementById('mood-btn').disabled = false;
+        wizardData[key] = val || el.dataset.value;
+        
+        if (step < 3) {
+            setTimeout(() => {
+                document.getElementById(`step-${step}`).style.display = 'none';
+                document.getElementById(`step-${step+1}`).style.display = 'block';
+            }, 300);
+        }
     }
 
-    async function getMoodRecs() {
-        if (!selectedMood) return;
+    function prevStep(step) {
+        document.getElementById(`step-${step+1}`).style.display = 'none';
+        document.getElementById(`step-${step}`).style.display = 'block';
+    }
 
-        const btn = document.getElementById('mood-btn');
-        const btnText = document.getElementById('mood-btn-text');
+    async function submitWizard() {
+        if (!wizardData.mood || !wizardData.story_type || !wizardData.company) {
+            if(window.toast) toast.error("Please answer all questions!");
+            return;
+        }
+
+        const btn = document.getElementById('wizard-submit-btn');
+        const origText = btn.innerHTML;
         btn.disabled = true;
-        btnText.innerHTML = '<span class="btn-spinner"></span> Finding picks...';
-
-        // Map mood → modyverse-style answers
-        const moodMap = {
-            happy:        { mood: 'Happy', story_type: 'Lighthearted', company: 'Anyone' },
-            sad:          { mood: 'Sad', story_type: 'Emotional', company: 'Solo' },
-            scared:       { mood: 'Anxious', story_type: 'Suspenseful', company: 'Solo' },
-            excited:      { mood: 'Excited', story_type: 'Epic Adventure', company: 'Friends' },
-            thoughtful:   { mood: 'Curious', story_type: 'Mind-Bending', company: 'Solo' },
-            romantic:     { mood: 'Romantic', story_type: 'Love Story', company: 'Partner' },
-            action:       { mood: 'Pumped', story_type: 'Action Packed', company: 'Friends' },
-            chill:        { mood: 'Relaxed', story_type: 'Feel-Good', company: 'Solo' },
-        };
-
-        const answers = moodMap[selectedMood] || { mood: selectedMood, story_type: 'Any', company: 'Solo' };
-
+        btn.innerHTML = '<span class="btn-spinner"></span> Finding picks...';
+        
         try {
             const res = await fetch('/api/modyverse', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(answers),
+                body: JSON.stringify(wizardData),
             });
             const data = await res.json();
             const container = document.getElementById('mood-results');
@@ -447,7 +490,7 @@
                 '<p style="color:var(--text-secondary); margin-top:1rem;">Error fetching recommendations.</p>';
         } finally {
             btn.disabled = false;
-            btnText.textContent = '✨ Get Picks';
+            btn.innerHTML = origText;
         }
     }
 

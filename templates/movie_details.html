@@ -167,9 +167,10 @@
 
     <!-- Cinema Mode Overlay -->
     {% if movie.trailer_url %}
-    <div class="cinema-overlay" id="cinema-overlay" onclick="handleCinemaClick(event)">
-        <button class="cinema-close" onclick="closeCinemaMode()">✕</button>
-        <div class="cinema-player" id="cinema-player">
+    <div class="cinema-overlay" id="cinema-overlay" onclick="handleCinemaClick(event)" style="background: rgba(0,0,0,0.9); backdrop-filter: blur(20px);">
+        <div class="cinema-ambient" id="cinema-ambient" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1.1); width: 80%; max-width: 1000px; aspect-ratio: 16/9; background-image: url('{{ movie.backdrop_path }}'); background-size: cover; background-position: center; filter: blur(80px) saturate(2); opacity: 0.45; pointer-events: none; z-index: 0; transition: opacity 0.5s ease;"></div>
+        <button class="cinema-close" onclick="closeCinemaMode()" style="z-index: 100;">✕</button>
+        <div class="cinema-player" id="cinema-player" style="position: relative; z-index: 10; box-shadow: 0 0 100px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; background: #000;">
             <!-- iframe injected by JS for performance -->
         </div>
     </div>
