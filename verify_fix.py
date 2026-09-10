@@ -11,7 +11,7 @@ if not GEMINI_API_KEY:
 else:
     genai.configure(api_key=GEMINI_API_KEY)
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content("Hello, can you hear me?")
         print(f"Success! Response: {response.text}")
     except Exception as e:

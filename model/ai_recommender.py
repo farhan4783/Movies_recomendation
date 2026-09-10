@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 if GEMINI_API_KEY and GENAI_AVAILABLE:
     try:
@@ -19,6 +20,17 @@ if GEMINI_API_KEY and GENAI_AVAILABLE:
     except Exception as e:
         print(f"Error configuring Gemini: {e}")
         GENAI_AVAILABLE = False
+
+def _get_generative_model(model_name=None):
+    """Returns a GenerativeModel instance using active model name or fallback."""
+    if not GENAI_AVAILABLE:
+        return None
+    name = model_name or GEMINI_MODEL_NAME
+    try:
+        return genai.GenerativeModel(name)
+    except Exception:
+        # Fallback to flash-latest
+        return genai.GenerativeModel('gemini-flash-latest')
 
 def get_ai_recommendation(query, movie_context=None, preferred_genres=None, recent_movies=None):
     """
@@ -34,7 +46,7 @@ def get_ai_recommendation(query, movie_context=None, preferred_genres=None, rece
         return "I'm sorry, I cannot think right now (AI library or key missing)."
 
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = _get_generative_model()
 
         context_lines = []
         if movie_context:
@@ -79,7 +91,7 @@ def get_mood_recommendation(answers):
          return "<p>API Key or Library missing.</p>"
 
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = _get_generative_model()
 
         time_of_day = answers.get('time_of_day', 'evening')
 
@@ -132,7 +144,7 @@ def get_user_personality(movie_history):
         }
 
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = _get_generative_model()
 
         movies_str = ", ".join(movie_history[:20])  # Limit to top 20 for prompt size
 
@@ -175,7 +187,7 @@ def get_ai_similar_explanation(movie_title, similar_titles):
         return {}
 
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = _get_generative_model()
         titles_list = "\n".join(f"- {t}" for t in similar_titles[:6])
 
         prompt = f"""For the movie "{movie_title}", explain in ONE short sentence (max 12 words) why each of these movies is similar:

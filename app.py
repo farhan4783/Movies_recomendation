@@ -24,6 +24,15 @@ app.config['SQLALCHEMY_ECHO'] = False
 
 db.init_app(app)
 
+# Register Blueprints
+try:
+    from routes.social import social_bp
+    from routes.notifications import notifications_bp
+    app.register_blueprint(social_bp)
+    app.register_blueprint(notifications_bp)
+except Exception as e:
+    print(f"Warning registering blueprints: {e}")
+
 # Login Manager Configuration
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -993,14 +1002,13 @@ def api_quiz_generate():
     category = data.get("category", "General Cinema")
     difficulty = data.get("difficulty", "medium")
 
-    from model.ai_recommender import GEMINI_API_KEY, GENAI_AVAILABLE
+    from model.ai_recommender import GEMINI_API_KEY, GENAI_AVAILABLE, _get_generative_model
     if not GEMINI_API_KEY or not GENAI_AVAILABLE:
         # Fallback hardcoded questions
         return jsonify({"questions": _get_fallback_questions()})
 
     try:
-        import google.generativeai as genai
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = _get_generative_model()
 
         prompt = f"""Generate exactly 8 movie trivia questions about "{category}" at {difficulty} difficulty.
 

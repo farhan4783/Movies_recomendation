@@ -9,10 +9,96 @@ Improvements:
 """
 import pandas as pd
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.decomposition import TruncatedSVD
+import re
+import math
+import collections
 from datetime import datetime
+
+try:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    from sklearn.decomposition import TruncatedSVD
+except (ImportError, Exception):
+    class TfidfVectorizer:
+        def __init__(self, stop_words='english', min_df=1, max_features=15000, ngram_range=(1, 2)):
+            self.stop_words = {
+                'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'as', 'at',
+                'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'could', 'did',
+                'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', 'has', 'have',
+                'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in', 'into',
+                'is', 'it', 'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'now',
+                'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves', 'out', 'over',
+                'own', 'same', 'she', 'should', 'so', 'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them',
+                'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until',
+                'up', 'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'with',
+                'would', 'you', 'your', 'yours', 'yourself', 'yourselves'
+            } if stop_words == 'english' else set()
+            self.min_df = min_df
+            self.max_features = max_features
+            self.ngram_range = ngram_range
+            self.vocab = {}
+            self.idf = {}
+
+        def _tokenize(self, text):
+            words = re.findall(r'(?u)\b\w\w+\b', text.lower())
+            tokens = []
+            if self.ngram_range[0] <= 1:
+                tokens.extend([w for w in words if w not in self.stop_words])
+            if self.ngram_range[1] >= 2 and len(words) >= 2:
+                for i in range(len(words) - 1):
+                    w1, w2 = words[i], words[i+1]
+                    if w1 not in self.stop_words or w2 not in self.stop_words:
+                        tokens.append(f"{w1}_{w2}")
+            return tokens
+
+        def fit_transform(self, documents):
+            doc_tokens = [self._tokenize(str(d)) for d in documents]
+            n_docs = len(documents)
+            df = collections.defaultdict(int)
+            for tokens in doc_tokens:
+                for term in set(tokens):
+                    df[term] += 1
+
+            terms = [t for t, count in df.items() if count >= self.min_df]
+            if not terms:
+                terms = list(df.keys())
+
+            terms.sort(key=lambda t: (df[t], t), reverse=True)
+            if self.max_features and len(terms) > self.max_features:
+                terms = terms[:self.max_features]
+
+            self.vocab = {t: idx for idx, t in enumerate(terms)}
+            self.idf = {t: math.log((1 + n_docs) / (1 + df[t])) + 1.0 for t in self.vocab}
+
+            matrix = np.zeros((len(doc_tokens), len(self.vocab)), dtype=np.float32)
+            for doc_idx, tokens in enumerate(doc_tokens):
+                counts = collections.Counter(tokens)
+                for term, count in counts.items():
+                    if term in self.vocab:
+                        col_idx = self.vocab[term]
+                        matrix[doc_idx, col_idx] = count * self.idf[term]
+                norm = np.linalg.norm(matrix[doc_idx])
+                if norm > 0:
+                    matrix[doc_idx] /= norm
+            return matrix
+
+    def cosine_similarity(vec, matrix):
+        vec = np.asarray(vec).reshape(1, -1)
+        vec_norm = np.linalg.norm(vec)
+        if vec_norm > 0:
+            vec = vec / vec_norm
+        dots = np.dot(matrix, vec.T).flatten()
+        return np.array([dots])
+
+    class TruncatedSVD:
+        def __init__(self, n_components=20, random_state=42):
+            self.n_components = n_components
+
+        def fit_transform(self, X):
+            X = np.asarray(X, dtype=np.float64)
+            u, s, vt = np.linalg.svd(X, full_matrices=False)
+            k = min(self.n_components, len(s))
+            return u[:, :k] * s[:k]
 
 CURRENT_YEAR = datetime.now().year
 

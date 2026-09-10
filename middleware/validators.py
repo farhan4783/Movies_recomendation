@@ -83,7 +83,7 @@ class ListCreateSchema(Schema):
     """Movie list creation validation schema"""
     name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     description = fields.Str(required=False, validate=validate.Length(max=500))
-    is_public = fields.Bool(required=False, missing=True)
+    is_public = fields.Bool(required=False, load_default=True)
     
     class Meta:
         unknown = EXCLUDE
@@ -102,8 +102,8 @@ class WatchlistToggleSchema(Schema):
 class SearchSchema(Schema):
     """Search validation schema"""
     query = fields.Str(required=True, validate=validate.Length(min=1, max=200))
-    page = fields.Int(required=False, validate=validate.Range(min=1), missing=1)
-    limit = fields.Int(required=False, validate=validate.Range(min=1, max=100), missing=20)
+    page = fields.Int(required=False, validate=validate.Range(min=1), load_default=1)
+    limit = fields.Int(required=False, validate=validate.Range(min=1, max=100), load_default=20)
     
     class Meta:
         unknown = EXCLUDE
@@ -119,7 +119,7 @@ class AdvancedSearchSchema(Schema):
     max_rating = fields.Float(required=False, validate=validate.Range(min=0, max=10))
     actor = fields.Str(required=False, validate=validate.Length(max=100))
     director = fields.Str(required=False, validate=validate.Length(max=100))
-    page = fields.Int(required=False, validate=validate.Range(min=1), missing=1)
+    page = fields.Int(required=False, validate=validate.Range(min=1), load_default=1)
     
     class Meta:
         unknown = EXCLUDE
