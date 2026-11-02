@@ -18,11 +18,23 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super_secret_key_change_this")
 
 # Database Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///database.db')
+db_url = os.getenv('DATABASE_URL', 'sqlite:///database.db')
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 
 db.init_app(app)
+
+@app.route("/health")
+def health_check():
+    """Production health check endpoint for Docker, orchestrators, and uptime monitors."""
+    return jsonify({
+        "status": "healthy",
+        "service": "Movie Maverick",
+        "timestamp": datetime.utcnow().isoformat()
+    }), 200
 
 # Register Blueprints
 try:
